@@ -27,14 +27,13 @@ lazy val commonSettings = Seq(
 lazy val dependencies = Seq(
   libraryDependencies ++= {
     val akkaV                   = "2.6.4"
-    val scalaTestV              = "3.0.6"
-    val wiremockV               = "2.23.2"
+    val scalaTestV              = "3.1.1"
 
     Seq(
       "com.typesafe.akka"              %% "akka-actor"                                 % akkaV,
 
-      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
-      "com.github.tomakehurst"          % "wiremock"                                   % wiremockV                 % Test
+      "com.typesafe.akka"              %% "akka-testkit"                               % akkaV                     % Test,
+      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test
     )
   }
 )
