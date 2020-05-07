@@ -9,45 +9,46 @@ import pl.rpw.core.vm.message.{TaskMessage, TaskSpecification}
 
 import scala.collection.mutable
 
-class GlobalUtilityActor(val hipervisors: mutable.HashSet[ActorRef]) extends Actor {
-  val system = ActorSystem("HelloSystem")
-  val usersVMs = new mutable.HashMap[String, List[ActorRef]]
+class GlobalUtilityActor(val hypervisor: mutable.HashSet[ActorRef])
+                        (implicit val actorSystem: ActorSystem) extends Actor {
+  private var usersVMs = Map[String, List[ActorRef]]()
 
   override def receive: Receive = {
     case VirtualMachineRequestMassage(userId, specification) =>
-      val hipervisor = selectHipervisor(specification)
-      val vm = createVM(specification, hipervisor)
+      val hypervisor = selectHipervisor(specification)
+      val vm = createVM(specification, hypervisor)
 
-      hipervisor ! AttachVMMessage(vm, specification)
+      hypervisor ! AttachVMMessage(vm, specification)
       addVmToMap(userId, vm)
 
     case TaskRequestMessage(userId, specification) =>
       val vm = selectVM(userId, specification)
       vm ! TaskMessage(specification)
 
-    case OverprovisioningMessage(hipervisor) =>
-      migrateMostRelevantMachineIfPossible(hipervisor)
+    case OverprovisioningMessage(hypervisor) =>
+      migrateMostRelevantMachineIfPossible(hypervisor)
 
-    case UnderprovisioningMessage(hipervisor) =>
-      migrateAllMachinesIfPossible(hipervisor)
+    case UnderprovisioningMessage(hypervisor) =>
+      migrateAllMachinesIfPossible(hypervisor)
 
-    case TaskFinishedMessage(taskId) =>
+    case TaskFinishedMessage(_) =>
       //respond to local agent about task execution
   }
 
-  private def addVmToMap(userId: String, vm: ActorRef) = {
-    val vmList = usersVMs.get(userId).getOrElse(new mutable.MutableList[ActorRef]())
-    vmList :+ vm
-    usersVMs.put(userId, vmList)
+  private def addVmToMap(userId: String,
+                         vm: ActorRef) = {
+    val vmList = usersVMs(userId) :+ vm
+    usersVMs = usersVMs ++ Map(userId -> vmList)
   }
 
-  private def createVM(specification: VirtualMachineSpecification, hipervisor: ActorRef) = {
-    system.actorOf(Props(
+  private def createVM(specification: VirtualMachineSpecification,
+                       hypervisor: ActorRef) = {
+    actorSystem.actorOf(Props(
       new VirtualMachineActor(
-        specification.resources.get(ResourceType.CPU),
-        specification.resources.get(ResourceType.MEMORY),
-        specification.resources.get(ResourceType.DISK_SPACE),
-        hipervisor
+        specification.resources(ResourceType.CPU),
+        specification.resources(ResourceType.MEMORY),
+        specification.resources(ResourceType.DISK_SPACE),
+        hypervisor
       )))
   }
 

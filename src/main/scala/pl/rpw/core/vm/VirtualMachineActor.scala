@@ -5,15 +5,20 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, ActorRef, ActorSystem}
 import pl.rpw.core.ResourceType
 import pl.rpw.core.global.message.TaskFinishedMessage
-import pl.rpw.core.hipervisor.message.{AllocateResourcesMessage, AttachVMMessage, DetachVMMessage, FreeResourcesMessage, VirtualMachineSpecification}
+import pl.rpw.core.hipervisor.message._
 import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage, TaskSpecification}
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
 
-class VirtualMachineActor(val cpu: Int, val memory: Int, val diskSpace: Int, var hipervisor: ActorRef) extends Actor {
-  val usedResources = mutable.Map(ResourceType.CPU -> 0, ResourceType.DISK_SPACE -> 0, ResourceType.MEMORY -> 0)
-  var active = true
+class VirtualMachineActor(val cpu: Int,
+                          val memory: Int,
+                          val diskSpace: Int,
+                          var hypervisor: ActorRef)
+  extends Actor {
+
+  private val usedResources = mutable.Map(ResourceType.CPU -> 0, ResourceType.DISK_SPACE -> 0, ResourceType.MEMORY -> 0)
+  private var active = true
 
   private val tasks = new mutable.HashSet[TaskSpecification]
 
@@ -22,14 +27,18 @@ class VirtualMachineActor(val cpu: Int, val memory: Int, val diskSpace: Int, var
       println("Received task specification: " + specification)
       tasks.add(specification)
       execute(specification)
-    case MigrationMessage(hipervisor) =>
-      hipervisor ! DetachVMMessage(this.self)
-      println("Received migration order: " + hipervisor)
-      this.hipervisor = hipervisor
-      hipervisor ! AttachVMMessage(this.self,
+
+    case MigrationMessage(hypervisor) =>
+      hypervisor ! DetachVMMessage(this.self)
+      println("Received migration order: " + hypervisor)
+      this.hypervisor = hypervisor
+
+      hypervisor ! AttachVMMessage(
+        this.self,
         new VirtualMachineSpecification(
           Map(ResourceType.CPU -> this.cpu, ResourceType.DISK_SPACE -> this.diskSpace, ResourceType.MEMORY -> this.memory)
-        ))
+        )
+      )
   }
 
   def allocateResources(cpu: Int, memory: Int, diskSpace: Int): Unit = {
@@ -72,17 +81,19 @@ class VirtualMachineActor(val cpu: Int, val memory: Int, val diskSpace: Int, var
     val actorSystem = ActorSystem()
     val scheduler = actorSystem.scheduler
     implicit val executor = actorSystem.dispatcher
-    scheduler.scheduleOnce(new FiniteDuration(specification.time, TimeUnit.SECONDS)){
+
+    scheduler.scheduleOnce(
+      new FiniteDuration(specification.time, TimeUnit.SECONDS)) {
       task.run()
     }
   }
 
   private def freeMachinesResources() = {
-    hipervisor ! FreeResourcesMessage(this.self)
+    hypervisor ! FreeResourcesMessage(this.self)
   }
 
   def requestMachinesResources() = {
-    hipervisor ! AllocateResourcesMessage(this.self)
+    hypervisor ! AllocateResourcesMessage(this.self)
   }
 
   def canExecuteTask(specification: TaskSpecification): Boolean = {
@@ -90,6 +101,6 @@ class VirtualMachineActor(val cpu: Int, val memory: Int, val diskSpace: Int, var
     val sufficientMemory = specification.resources(ResourceType.MEMORY) < cpu - usedResources(ResourceType.MEMORY)
     val sufficientDiskSpace = specification.resources(ResourceType.DISK_SPACE) < cpu - usedResources(ResourceType.DISK_SPACE)
 
-    return sufficientCpu && sufficientMemory && sufficientDiskSpace
+    sufficientCpu && sufficientMemory && sufficientDiskSpace
   }
 }
