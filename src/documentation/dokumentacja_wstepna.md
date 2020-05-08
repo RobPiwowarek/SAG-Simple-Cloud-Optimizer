@@ -9,7 +9,7 @@ Głównym zadaniem agenta lokalnego jest obserwowanie zużycia zasobów maszyn p
 która umożliwiłaby przewidywanie wymagań użytkownika w chwili t+N. Zbierane dane są przekształcane do postaci szeregu czasowego składającego się 
 z wymagań na zasoby systemowe w chwilach t-1, t-2, ..., t-N.
 
-Dane te są na bierząco aktualizowane, w celu poprawienia jakości modelu predykcyjnego służącego do przewidywania wymagań użytkownika. 
+Dane te są na bieżąco aktualizowane, w celu poprawienia jakości modelu predykcyjnego służącego do przewidywania wymagań użytkownika. 
 Celem tego typu podejścia jest uniknięcie sytuacji, w których klientowi zostałoby przypisanych zbyt wiele lub zbyt mało zasobów, 
 biorąc pod uwagę także inne kwestie, takie jak liczba zapytań na jednostkę czasową, czas odpowiedzi itp. Wynik przewidywania jest 
 kolejnie wysyłany to agenta globalnego, którego zadaniem jest zarządzanie zasobami i w razie potrzeby odebranie lub przydzielenie ich większej ilości. [1]
