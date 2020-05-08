@@ -35,3 +35,52 @@ Dla uproszczenia obliczeń, powyższe równanie można zapisać w sposób macier
 </p>
 
 Najczęściej wykorzystuje się do tego celu klasyczną metodę najmniejszych kwadratów i jej pochodne. Metoda ta jest najstarsza i najłatwiejsza do zastosowania, choć posiada wady (np. niewielką odporność na elementy odstające), które udało się usunąć we wspomnianych pozostałych metodach.
+
+### Agent globalny
+Agent globalny odpowiedzialny jest za przydzielanie zasobów chmury w taki sposób, aby
+zoptymalizować zużycie energii, a tym samym koszty utrzymania chmury. Optymalizacja odbywa się poprzez
+utrzymanie właściwego rozkładu maszyn wirtualnych na maszynach fizycznych oraz propagowanie zadań 
+od użytkowników na ich maszyny wirtualne.
+
+Agent globalny redukuje liczbę uruchomionych (a zatem pobierających energię) maszyn fizycznych poprzez 
+redukcję aktywnych maszyn wirtualnych i ich migracji. Dokonuje tego poprzez szybkie zwalnianie zasobów
+wykorzystywanych przez konkretną maszynę wirtualną, gdy skończy ona wykonywać zadania. Zwolnione zasoby
+mogą zostać przydzielone innej maszynie wirtualnej, bez potrzeby alokowania ich na kolejnej maszynie 
+fizycznej. Agent globalny pozostaje w ciągłej komunikacji z hipernadzorcami maszyn fizycznych, dzięki 
+czemu jest w stanie dostarczać użytkownikom żądane zasoby i zwalniać je, gdy tylko jest to możliwe.
+
+W sytuacji, gdy hipernadzorca zużywa za dużo zasobów powiadamia on o tym globalnego agenta. Globalny agent 
+następnie wybiera maszynę wirtualną, która najbardziej wpływa na przeciążenie maszyny fizycznej (np. tę, która 
+zużywa najwięcej przeciążonego zasobu) i dokonuje jej migracji do innej maszyny fizycznej.
+
+Jeżeli natomiast zajdzie sytuacja, w której maszyna fizyczna jest obciążona w małym stopniu, a w systemie 
+znajdują się inne maszyny, na których mogłyby działać uruchomione na niej maszyny wirtualne, hipernadzorca
+również powiadamia globalnego agenta. Globalny agent migruje wtedy wszystkie maszyny wirtualne ze wskazanej
+maszyny fizycznej do innych maszyn, redukując w ten sposób liczbę pracujących maszyn o 1. [1]
+
+Redukcja uruchomionych maszyn fizycznych następuje również poprzez przyjęcie konkretnej strategii alokacji
+zasobów dla nowych maszyn wirtualnych. Proponujemy przyjęcie strategii podobnej do [2] w której wybieramy zasób, na który nowa 
+maszyna ma największe zapotrzebowanie, następnie spośród pracujących maszyn fizycznych wybieramy tę, która posiada go najmniej, ale jest w stanie zapewnić
+wystarczająco dużo zasobów nowej maszynie wirtualnej. Jeżeli żadna z pracujących już maszyn fizycznych nie
+jest w stanie uruchomić nowej maszyny wirtualnej, dokonujemy aktywacji kolejnej maszyny fizycznej, przy czym
+wybierana jest ta o najmniejszym zużyciu energii. 
+
+Aby efektywnie zwalniać zasoby maszyn fizycznych, agent globalny zapewnia również strategię przyporządkowywania 
+zadań do maszyn wirtualnych w taki sposób, aby jak najwięcej z nich mogło wykonywać się równolegle. Proponujemy 
+metodę opartą o zasoby, analogiczną do alokacji zasobów dla maszyn wirtualnych, która została opisana powyżej.
+Wybieramy zasób najistotniejszy dla zadania, następnie maszynę wirtualną, która posiada go najmniej, ale jest 
+w stanie zapewnić wykonanie zadania. W przypadku gdy żadna z maszyn użytkownika nie posiada wystarczającej ilości
+zasobów,, zadanie jest kolejkowane. Istnieją też inne metody szeregowania zadań, w szczególności takie oparte o czas
+wykonania, które dają dobre rezultaty, jednak w środowisku w którym do puli ciągle napływają nowe zadania, istnieje
+ryzyko, ze zadania o skrajnie długim lub skrajnie krótkim czasie wykonania nigdy nie zostaną przydzielone maszynie
+wirtualnej. Przyjmujemy założenie że czas oczekiwania użytkownika na wykonanie zadania powinien być jak najkrótszy,
+dlatego zdecydowaliśmy się wybrać strategię opartą o zasoby. 
+
+### Symulacja środowiska chmurowego
+
+
+
+### Bibliografia
+1. Multi-Agent Based Dynamic Resource Provisioningand Monitoring In Cloud Computing Systems - 
+Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
+2. Energy Efficient Allocation of Virtual Machines in Cloud Data Centers - Anton Beloglazov and Rajkumar Buyya
