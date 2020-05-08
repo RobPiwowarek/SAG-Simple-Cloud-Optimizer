@@ -1,21 +1,36 @@
+### Cel zadania, architektura
+Celem zadania jest zbudowanie agentowego systemu do optymalizacji zużycia zasobów w chmurze. Optymalizacja powinna zapewnić minimalne zużycie
+energii przez fizyczne maszyny przy jednoczesnym spełnieniu wymagań czasowych dotyczących realizacji zadań użytkowników (SLA). Proponujemy
+wykorzystać do tego architekturę, w której główne role odgrywają dwa typy agentów - agent lokalny, modyfikujący żądania użytkowników dotyczące zasobów
+oraz globalny, zarządzający dystrybucją zasobów i migracjami maszyn wirtualnych.
+
 ### Agent lokalny
-Głównym zadaniem agenta lokalnego jest obserwowanie zużycia zasobów maszyn przez przypisanego do niego klienta oraz budowanie historii, która umożliwiłaby przewidywanie wymagań użytkownika w chwili t+N. Zbierane dane są przekształcane do postaci szeregu czasowego składającego się z wymagań na zasoby systemowe w chwilach t-1, t-2, ..., t-N.
+Głównym zadaniem agenta lokalnego jest obserwowanie zużycia zasobów maszyn przez przypisanego do niego klienta oraz budowanie historii, 
+która umożliwiłaby przewidywanie wymagań użytkownika w chwili t+N. Zbierane dane są przekształcane do postaci szeregu czasowego składającego się 
+z wymagań na zasoby systemowe w chwilach t-1, t-2, ..., t-N.
 
-Dane te są na bierząco aktualizowane, w celu poprawienia jakości modelu predykcyjnego służącego do przewidywania wymagań użytkownika. Celem tego typu podejścia jest uniknięcie sytuacji, w których klientowi zostałoby przypisanych zbyt wiele lub zbyt mało zasobów, biorąc pod uwagę także inne kwestie, takie jak liczba zapytań na jednostkę czasową, czas odpowiedzi itp. Wynik przewidywania jest kolejnie wysyłany to agenta globalnego, którego zadaniem jest zarządzanie zasobami i w razie potrzeby odebranie lub przydzielenie ich większej ilości.
+Dane te są na bierząco aktualizowane, w celu poprawienia jakości modelu predykcyjnego służącego do przewidywania wymagań użytkownika. 
+Celem tego typu podejścia jest uniknięcie sytuacji, w których klientowi zostałoby przypisanych zbyt wiele lub zbyt mało zasobów, 
+biorąc pod uwagę także inne kwestie, takie jak liczba zapytań na jednostkę czasową, czas odpowiedzi itp. Wynik przewidywania jest 
+kolejnie wysyłany to agenta globalnego, którego zadaniem jest zarządzanie zasobami i w razie potrzeby odebranie lub przydzielenie ich większej ilości. [1]
 
-Architektura oraz schemat przepływu informacji agenta lokalnego są przedstawione na poniższych zdjęciach.
+Architektura oraz schemat przepływu informacji agenta lokalnego są przedstawione na poniższych ilustracjach.
 
 <p align="center">
   <img src = "https://imgur.com/iCJQ5Rb.png"/>
-   <figcaption>Architektura agenta lokalnego</figcaption>
+   <figcaption>Architektura agenta lokalnego [1]</figcaption>
 </p>
 
 <p align="center">
   <img src = "https://imgur.com/bl97feT.png"/>
-   <figcaption>Schemat przepływu informacji w obrębie agenta lokalnego</figcaption>
+   <figcaption>Schemat przepływu informacji w obrębie agenta lokalnego [1]</figcaption>
 </p>
 
-W celu przewidywania wymagań klienta agent korzysta z jednego z modeli statystycznych służących do przewisywania wartości ciągłych. Aby był on w stanie działać w czasie rzeczywistym, musi być na tyle prosty w budowie, aby czas jego aktualizacji nie zakłócał pracy użytkownika. Modelami spełniającymi dane wymagania byłyby prawdopodobnie regresja liniowa, perceptron bądź las losowy. Dla przykładu, skupimy się na opisie tylko jednego z nich. Pomimo wszystko podczas implementacji przetestujemy każdy, wybierając ten, który spełnia wyżej opisane wymagania dając jednocześnie najlepszą jakośc przewidywań.
+W celu przewidywania wymagań klienta agent korzysta z jednego z modeli statystycznych służących do przewisywania wartości ciągłych. 
+Aby był on w stanie działać w czasie rzeczywistym, musi być na tyle prosty w budowie, aby czas jego aktualizacji nie zakłócał pracy użytkownika. 
+Modelami spełniającymi dane wymagania byłyby prawdopodobnie regresja liniowa, perceptron bądź las losowy. Dla przykładu, 
+skupimy się na opisie tylko jednego z nich. Pomimo wszystko podczas implementacji przetestujemy każdy, wybierając ten, 
+który spełnia wyżej opisane wymagania dając jednocześnie najlepszą jakośc przewidywań.
 
 #### Model regresji liniowej
 Zbiór danych historycznych będzie reprezentowany w postaci {yi, xi1, ..., xip}^n, gdzie zmienne xi1, ...xip będą kolejnymi wartościami szeregu czasowego stworzonego na podstawie historii zużycia danych przez użytkownika. Model regresji liniowej zakłada, że istnieje liniowa relacja pomiędzy zmienną zależną y a wektorem p x 1 regresorów xi.  Zależność ta jest modelowana przez uwzględnienie składnika losowego (błędu) Epsilon, który jest zmienną losową. Dokładniej, model ten jest postaci:
@@ -49,8 +64,8 @@ mogą zostać przydzielone innej maszynie wirtualnej, bez potrzeby alokowania ic
 fizycznej. Agent globalny pozostaje w ciągłej komunikacji z hipernadzorcami maszyn fizycznych, dzięki 
 czemu jest w stanie dostarczać użytkownikom żądane zasoby i zwalniać je, gdy tylko jest to możliwe.
 
-W sytuacji, gdy hipernadzorca zużywa za dużo zasobów powiadamia on o tym globalnego agenta. Globalny agent 
-następnie wybiera maszynę wirtualną, która najbardziej wpływa na przeciążenie maszyny fizycznej (np. tę, która 
+W sytuacji, gdy maszyny wirtualne na maszynie danego hipernadzorcy zużywają za dużo zasobów, powiadamia on o tym globalnego agenta. 
+Globalny agent następnie wybiera maszynę wirtualną, która najbardziej wpływa na przeciążenie maszyny fizycznej (np. tę, która 
 zużywa najwięcej przeciążonego zasobu) i dokonuje jej migracji do innej maszyny fizycznej.
 
 Jeżeli natomiast zajdzie sytuacja, w której maszyna fizyczna jest obciążona w małym stopniu, a w systemie 
@@ -70,7 +85,7 @@ zadań do maszyn wirtualnych w taki sposób, aby jak najwięcej z nich mogło wy
 metodę opartą o zasoby, analogiczną do alokacji zasobów dla maszyn wirtualnych, która została opisana powyżej.
 Wybieramy zasób najistotniejszy dla zadania, następnie maszynę wirtualną, która posiada go najmniej, ale jest 
 w stanie zapewnić wykonanie zadania. W przypadku gdy żadna z maszyn użytkownika nie posiada wystarczającej ilości
-zasobów,, zadanie jest kolejkowane. Istnieją też inne metody szeregowania zadań, w szczególności takie oparte o czas
+zasobów, zadanie jest kolejkowane. Istnieją też inne metody szeregowania zadań, w szczególności takie oparte o czas
 wykonania, które dają dobre rezultaty, jednak w środowisku w którym do puli ciągle napływają nowe zadania, istnieje
 ryzyko, ze zadania o skrajnie długim lub skrajnie krótkim czasie wykonania nigdy nie zostaną przydzielone maszynie
 wirtualnej. Przyjmujemy założenie że czas oczekiwania użytkownika na wykonanie zadania powinien być jak najkrótszy,
