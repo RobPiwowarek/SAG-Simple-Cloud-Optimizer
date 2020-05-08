@@ -78,7 +78,25 @@ dlatego zdecydowaliśmy się wybrać strategię opartą o zasoby.
 
 ### Symulacja środowiska chmurowego
 
+W celu realizacji projektu proponujemy wykonanie pomocnicznych agentów w celu symulacji środowiska chmurowego.
+Dostarczamy agenta symulującego zachowanie hipernadzorcy oraz maszyny wirtualnej. Komunikacja pomiędzy agentami
+przedstawiona jest na rysuku poniżej:
 
+<p align="center">
+  <img src = "./komunikacja.png"/> 
+   <figcaption>Komunikacja pomiędzy agentami</figcaption>
+</p>
+
+Wymieniane są następujące komunikaty:
+ - createVM - żądanie utworzenia maszyny wirtualnej,
+ - performTask - żądanie wykonania zadania na jednej z maszyn użytkownika,
+ - taskFinished - powiadomienie o ukończeniu zadania,
+ - allocateResources - żądanie przydzielenia zasobów uruchomionej lub nowoutworzonej maszynie wirtualnej,
+ - freeResources - żądanie zwolnienia zasobów maszyny, która nie wykonuje już zadań,
+ - underprovisioning - komunikat o niewystarczająco dużym stopniu alokacji zasobów maszyny fizycznej,
+ - overprovisioning - komunikat o nadmiernej alokacji zasobów maszyny fizycznej,
+ - attachVM - żądanie przydzielenia zasobów maszynie wirtualnej, wykorzystywane przy tworzeniu nowej maszyny oraz przy migracji,
+ - detachVM - komunikat o możliwości usunięcia maszyny z listy danego hipernadzorcy (z maszyny fizycznej), wykorzystywany przy migracji.
 
 ### Bibliografia
 1. Multi-Agent Based Dynamic Resource Provisioningand Monitoring In Cloud Computing Systems - 
