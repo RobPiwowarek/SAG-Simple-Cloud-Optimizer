@@ -26,11 +26,11 @@ Architektura oraz schemat przepływu informacji agenta lokalnego są przedstawio
    <figcaption>Schemat przepływu informacji w obrębie agenta lokalnego [1]</figcaption>
 </p>
 
-W celu przewidywania wymagań klienta agent korzysta z jednego z modeli statystycznych służących do przewisywania wartości ciągłych. 
+W celu przewidywania wymagań klienta agent korzysta z jednego z modeli statystycznych służących do przewidywania wartości ciągłych. 
 Aby był on w stanie działać w czasie rzeczywistym, musi być na tyle prosty w budowie, aby czas jego aktualizacji nie zakłócał pracy użytkownika. 
 Modelami spełniającymi dane wymagania byłyby prawdopodobnie regresja liniowa, perceptron bądź las losowy. Dla przykładu, 
-skupimy się na opisie tylko jednego z nich. Pomimo wszystko podczas implementacji przetestujemy każdy, wybierając ten, 
-który spełnia wyżej opisane wymagania dając jednocześnie najlepszą jakośc przewidywań.
+skupimy się na opisie tylko jednego z nich. Mimo wszystko podczas implementacji przetestujemy każdy, wybierając ten, 
+który spełnia wyżej opisane wymagania dając jednocześnie najlepszą jakość przewidywań.
 
 #### Model regresji liniowej
 Zbiór danych historycznych będzie reprezentowany w postaci {yi, xi1, ..., xip}^n, gdzie zmienne xi1, ...xip będą kolejnymi wartościami szeregu czasowego stworzonego na podstawie historii zużycia danych przez użytkownika. Model regresji liniowej zakłada, że istnieje liniowa relacja pomiędzy zmienną zależną y a wektorem p x 1 regresorów xi.  Zależność ta jest modelowana przez uwzględnienie składnika losowego (błędu) Epsilon, który jest zmienną losową. Dokładniej, model ten jest postaci:
@@ -57,8 +57,9 @@ zoptymalizować zużycie energii, a tym samym koszty utrzymania chmury. Optymali
 utrzymanie właściwego rozkładu maszyn wirtualnych na maszynach fizycznych oraz propagowanie zadań 
 od użytkowników na ich maszyny wirtualne.
 
-Agent globalny redukuje liczbę uruchomionych (a zatem pobierających energię) maszyn fizycznych poprzez 
-redukcję aktywnych maszyn wirtualnych i ich migracji. Dokonuje tego poprzez szybkie zwalnianie zasobów
+Agent globalny redukuje liczbę uruchomionych (a zatem pobierających energię) maszyn fizycznych poprzez migracje i
+redukcję liczby aktywnych maszyn wirtualnych, równocześnie starając się aby wykonanych migracji było możliwie najmniej. 
+Dokonuje tego poprzez szybkie zwalnianie zasobów
 wykorzystywanych przez konkretną maszynę wirtualną, gdy skończy ona wykonywać zadania. Zwolnione zasoby
 mogą zostać przydzielone innej maszynie wirtualnej, bez potrzeby alokowania ich na kolejnej maszynie 
 fizycznej. Agent globalny pozostaje w ciągłej komunikacji z hipernadzorcami maszyn fizycznych, dzięki 
@@ -66,7 +67,7 @@ czemu jest w stanie dostarczać użytkownikom żądane zasoby i zwalniać je, gd
 
 W sytuacji, gdy maszyny wirtualne na maszynie danego hipernadzorcy zużywają za dużo zasobów, powiadamia on o tym globalnego agenta. 
 Globalny agent następnie wybiera maszynę wirtualną, która najbardziej wpływa na przeciążenie maszyny fizycznej (np. tę, która 
-zużywa najwięcej przeciążonego zasobu) i dokonuje jej migracji do innej maszyny fizycznej.
+zużywa najwięcej przeciążonego zasobu) i dokonuje jej migracji na inną maszynę fizyczną.
 
 Jeżeli natomiast zajdzie sytuacja, w której maszyna fizyczna jest obciążona w małym stopniu, a w systemie 
 znajdują się inne maszyny, na których mogłyby działać uruchomione na niej maszyny wirtualne, hipernadzorca
@@ -74,9 +75,9 @@ również powiadamia globalnego agenta. Globalny agent migruje wtedy wszystkie m
 maszyny fizycznej do innych maszyn, redukując w ten sposób liczbę pracujących maszyn o 1. [1]
 
 Redukcja uruchomionych maszyn fizycznych następuje również poprzez przyjęcie konkretnej strategii alokacji
-zasobów dla nowych maszyn wirtualnych. Proponujemy przyjęcie strategii podobnej do [2] w której wybieramy zasób, na który nowa 
+zasobów dla nowych maszyn wirtualnych. Proponujemy przyjęcie strategii podobnej do [2], w której wybieramy zasób, na który nowa 
 maszyna ma największe zapotrzebowanie, następnie spośród pracujących maszyn fizycznych wybieramy tę, która posiada go najmniej, ale jest w stanie zapewnić
-wystarczająco dużo zasobów nowej maszynie wirtualnej. Jeżeli żadna z pracujących już maszyn fizycznych nie
+wystarczająco dużo zasobów nowej maszynie wirtualnej. Jeżeli żadna z już pracujących maszyn fizycznych nie
 jest w stanie uruchomić nowej maszyny wirtualnej, dokonujemy aktywacji kolejnej maszyny fizycznej, przy czym
 wybierana jest ta o najmniejszym zużyciu energii. 
 
