@@ -5,8 +5,8 @@ Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ic
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
 2. Przekształcenie historii do postaci odpowiedniej dla modelu.
 3. Trenowanie modelu.
-4. Generowanie kolejnych wartości sin w zależności od czasu. Po wygenerowaniu określonej w konfiguracji agenta ilości wartości, model jest przeuczany na nowo, aby był w stanie dostosowywać się do sytuacji, w których funkcja generująca wartości nie jest okresowa.
-5. Po zakończeniu generowania wartości, są one zapisane do pliku, aby można było z nich skorzystać podczas trenowania modelu przy kolejnym uruchomieniu agenta. 
+4. Generowanie kolejnych wartości sin w zależności od czasu.
+5. Zapisanie historii. 
 
 #### Dokładny opis działania agenta lokalnego
 **1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku**
@@ -35,10 +35,17 @@ osiągał błąd na poziomie 24.95%. Tak więc w powyższym przypadku zastosowan
 Na poniższych zdjęciach możemy zobaczyć jak wyżej opisane modele przewidują wartość funkcji sin:
 <p align="center">
   <img src = "./raport_koncowy_zdjecia/real_predicted_rgb.png"/>
-   <figcaption>Fragment zbioru uczącego</figcaption>
 </p>
 
 <p align="center">
   <img src = "./raport_koncowy_zdjecia/real_predicted_lnr.png"/>
    <figcaption>Predicted vs Real Values for Linear Regression, RMSE = 24.95</figcaption>
 </p>
+
+**4. Generowanie kolejnych wartości sin w zależności od czasu.**
+
+Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości sin w zależności od czasu w pętli wykonującej się x razy. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu (t - k : t ). Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
+
+**5. Zapisanie historii.**
+
+Po zakończeniu generowania wartości, są one zapisane do pliku, aby można było z nich skorzystać podczas trenowania modelu przy kolejnym uruchomieniu agenta.
