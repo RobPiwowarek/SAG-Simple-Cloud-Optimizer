@@ -2,7 +2,7 @@ name := "simple-cloud-optimizer"
 
 lazy val commonSettings = Seq(
   organization := s"pl.rpw",
-  scalaVersion := "2.12.9",
+  scalaVersion := "2.11.8",
   scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
@@ -26,15 +26,18 @@ lazy val commonSettings = Seq(
 
 lazy val dependencies = Seq(
   libraryDependencies ++= {
-    val akkaV                   = "2.6.4"
+    val akkaV                   = "2.5.31"
     val scalaTestV              = "3.1.1"
+    val sparkV                  = "2.2.0"
 
     Seq(
       "com.typesafe.akka"              %% "akka-actor"                                 % akkaV,
-
       "com.typesafe.akka"              %% "akka-testkit"                               % akkaV                     % Test,
-      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test
-    )
+      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
+      "org.apache.spark"                % "spark-core_2.11"                            % sparkV,
+      "org.apache.spark"                % "spark-sql_2.11"                             % sparkV,
+      "org.apache.spark"                % "spark-mllib_2.11"                           % sparkV
+)
   }
 )
 
