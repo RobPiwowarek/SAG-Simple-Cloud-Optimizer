@@ -5,7 +5,7 @@ Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ic
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
 2. Przekształcenie historii do postaci odpowiedniej dla modelu.
 3. Trenowanie modelu.
-4. Generowanie kolejnych wartości sin w zależności od czasu.
+4. Generowanie kolejnych wartości funkcji *sin* zależności od czasu i predykcja wartości w chwili t+1
 5. Zapisanie historii. 
 
 #### Dokładny opis działania agenta lokalnego
@@ -42,9 +42,9 @@ Na poniższych zdjęciach możemy zobaczyć jak wyżej opisane modele przewiduj�
    <figcaption>Predicted vs Real Values for Linear Regression, RMSE = 24.95</figcaption>
 </p>
 
-**4. Generowanie kolejnych wartości sin w zależności od czasu.**
+**4. Generowanie kolejnych wartości funckji sin w zależności od czasu i predykcja wartości w chwili t+1.**
 
-Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości sin w zależności od czasu w pętli wykonującej się x razy. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu *(t - k : t )*. Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
+Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości sin w zależności od czasu w pętli wykonującej się x razy. Co każdą iteracją model przewiduje wartość funkcji w chwili t+1 i wysyła ją do agenta globalnego w celu uzyskania lub oddania części przydzielanych mu zasobów. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu *(t - k : t )*. Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
 
 **5. Zapisanie historii.**
 
