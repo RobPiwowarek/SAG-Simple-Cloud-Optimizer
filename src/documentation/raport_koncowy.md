@@ -1,5 +1,5 @@
 ### Agent lokalny
-Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ich podstawie przewidywanie ich zużycia w chwili *t+1*. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu agent lokalny generuje wartości funkcji *sin* od *t* i próbuje przewidzieć wartość tej funkcji w chwili *t+1*. Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
+Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta, przewidywanie ich zużycia w chwili *t+1* i informowanie o tym **agenta globalnego**. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje wartości funkcji *sin* od *t* i próbuje przewidzieć wartość tej funkcji w chwili *t+1*. Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
 
 #### Kroki podejmowane przez agenta lokalnego w celu przewidzenia zużycia zasobów:
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
@@ -11,7 +11,7 @@ Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ic
 #### Dokładny opis działania agenta lokalnego
 **1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku**
 
-Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej linii przechowywana jest informacja na temat ilości zużytych danych w postaci licby zmiennoprzecinkowej oraz chwili czasu ,w której wystąpiło dane zdarzenie. Fragment pliku jest widoczny na zdjęciu poniżej.
+Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej linii przechowywana jest informacja na temat ilości zużytych danych w postaci liczby zmiennoprzecinkowej oraz chwili, w której wystąpiło dane zdarzenie. Fragment pliku jest widoczny na zdjęciu poniżej.
 
 <p align="center">
   <img src = "./raport_koncowy_zdjecia/history_snapshot.png"/>
@@ -44,7 +44,7 @@ Na poniższych zdjęciach możemy zobaczyć jak wyżej opisane modele przewiduj�
 
 **4. Generowanie kolejnych wartości funckji sin w zależności od czasu i predykcja wartości w chwili t+1.**
 
-Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości sin w zależności od czasu w pętli wykonującej się x razy. Co każdą iteracją model przewiduje wartość funkcji w chwili t+1 i wysyła ją do agenta globalnego w celu uzyskania lub oddania części przydzielanych mu zasobów. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu *(t - k : t )*. Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
+Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości funkcji *sin* w zależności od czasu, w pętli wykonującej się x razy. Co każdą iteracją model przewiduje wartość funkcji w chwili *t+1* i wysyła ją do **agenta globalnego** w celu uzyskania lub oddania części przydzielanych mu zasobów. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu *(t - k : t )*. Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
 
 **5. Zapisanie historii.**
 
