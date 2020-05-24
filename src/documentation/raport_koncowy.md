@@ -1,5 +1,5 @@
 ### Agent lokalny
-Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ich podstawie przewidywanie ich zużycia w chwili t+1. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje wartości funkcji sin od t i próbuje przewidzieć wartość tej funkcji w chwili t+1. Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
+Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ich podstawie przewidywanie ich zużycia w chwili *t+1*. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje wartości funkcji *sin* od *t* i próbuje przewidzieć wartość tej funkcji w chwili *t+1*. Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
 
 #### Kroki podejmowane przez agenta lokalnego w celu przewidzenia zużycia zasobów:
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
@@ -20,7 +20,7 @@ Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej lin
 
 **2. Przekształcenie historii do postaci odpowiedniej dla modelu**
 
-Do predykcji wartości w chwili t+1, model wykorzystuje wartości dla chwil t, t-1...t-n+1, które są jego atrybutami. W przypadku naszego systemu wartość n wynosi 10. Taka wartość pozwala zachować odpowiedni balans pomiędzy czasem uczenia modelu a jego precyzją. Data Frame jaki powstaje z listy o długości m ma kształt m x n+1 (n kolumn to atrybuty, a 1 to etykieta, czyli wartość jaką model powinien na ich podstawie przewidzieć). Poniższe zdjęcie przedstawia fragment zbioru uczącego:
+Do predykcji wartości w chwili *t+1*, model wykorzystuje wartości dla chwil *t, t-1...t-n+1*, które są jego atrybutami. W przypadku naszego systemu wartość n wynosi 10. Taka wartość pozwala zachować odpowiedni balans pomiędzy czasem uczenia modelu a jego precyzją. Data Frame jaki powstaje z listy o długości m ma kształt *m x n+1* (n kolumn to atrybuty, a 1 to etykieta, czyli wartość jaką model powinien na ich podstawie przewidzieć). Poniższe zdjęcie przedstawia fragment zbioru uczącego:
 <p align="center">
   <img src = "./raport_koncowy_zdjecia/training_dataset_snapshot.png"/>
    <figcaption>Fragment zbioru uczącego</figcaption>
@@ -44,7 +44,7 @@ Na poniższych zdjęciach możemy zobaczyć jak wyżej opisane modele przewiduj�
 
 **4. Generowanie kolejnych wartości sin w zależności od czasu.**
 
-Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości sin w zależności od czasu w pętli wykonującej się x razy. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu (t - k : t ). Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
+Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości sin w zależności od czasu w pętli wykonującej się x razy. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu *(t - k : t )*. Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
 
 **5. Zapisanie historii.**
 
