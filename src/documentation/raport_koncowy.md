@@ -11,7 +11,7 @@ Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ic
 #### Dokładny opis działania agenta lokalnego
 **1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku**
 
-Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej linii przechowywana jest informacja na temat ilości zużytych danych w postaci licby zmiennoprzecinkowej oraz chwili czasu w, której wystąpiło dane zdarzenie. Fragment pliku jest widoczny na zdjęciu poniżej.
+Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej linii przechowywana jest informacja na temat ilości zużytych danych w postaci licby zmiennoprzecinkowej oraz chwili czasu ,w której wystąpiło dane zdarzenie. Fragment pliku jest widoczny na zdjęciu poniżej.
 
 <p align="center">
   <img src = "./raport_koncowy_zdjecia/history_snapshot.png"/>
