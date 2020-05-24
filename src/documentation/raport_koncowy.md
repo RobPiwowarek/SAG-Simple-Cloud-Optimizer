@@ -29,6 +29,7 @@ Do predykcji wartości w chwili *t+1*, model wykorzystuje wartości dla chwil *t
 Na zdjęciu możemy zauważyć, że wartość kolumny x wiersza y jest zawsze taka sama jak wartość kolumny x+1 i wiersza y-1.
 
 **3. Trenowanie modelu**
+
 Chcąc osiągnąć jak największą precyzję w przewidywaniu zużycia zasobów systemowych przetestowane zostały różne modele statystyczne, z których najlepszym okazał się *Gradient Boosted Tree Regression Model*, osiągając średni błąd kwadratowy na zbiorze testowym o wartości jedynie 1.8%. Dla porównania, model regresji liniowej proponowany w referencyjnych rozwiązaniach 
 osiągał błąd na poziomie 24.95%. Tak więc w powyższym przypadku zastosowanie bardziej złożonego modelu pozwoliło osiągnąć ponad 13-krotnie lepszy efekt! 
 
