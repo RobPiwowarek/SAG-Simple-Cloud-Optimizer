@@ -1,5 +1,5 @@
 ### Agent lokalny
-Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ich podstawie przewidywanie ich zużycia w chwili *t+1*. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje wartości funkcji *sin* od *t* i próbuje przewidzieć wartość tej funkcji w chwili *t+1*. Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
+Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta i na ich podstawie przewidywanie ich zużycia w chwili *t+1*. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu agent lokalny generuje wartości funkcji *sin* od *t* i próbuje przewidzieć wartość tej funkcji w chwili *t+1*. Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
 
 #### Kroki podejmowane przez agenta lokalnego w celu przewidzenia zużycia zasobów:
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
