@@ -34,11 +34,11 @@ osiągał błąd na poziomie 24.95%. Tak więc w powyższym przypadku zastosowan
 
 Na poniższych zdjęciach możemy zobaczyć jak wyżej opisane modele przewidują wartość funkcji sin:
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/real_predicted_rgb.pdf"/>
+  <img src = "./raport_koncowy_zdjecia/real_predicted_rgb.png"/>
    <figcaption>Fragment zbioru uczącego</figcaption>
 </p>
 
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/real_predicted_lnr.pdf"/>
+  <img src = "./raport_koncowy_zdjecia/real_predicted_lnr.png"/>
    <figcaption>Predicted vs Real Values for Linear Regression, RMSE = 24.95</figcaption>
 </p>
