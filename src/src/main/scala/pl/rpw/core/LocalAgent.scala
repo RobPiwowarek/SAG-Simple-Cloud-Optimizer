@@ -61,8 +61,8 @@ class LocalAgent extends Actor{
         x=x+1
       }
       //saving real data usage and predictions to make visualizations of the process
-      this.writeHistoryToFile("/home/andy/Desktop/data/usage.txt", usageHistory, false)
-      this.writeHistoryToFile("/home/andy/Desktop/data/predicted.txt", predictedHistory, false)
+//       this.writeHistoryToFile("/home/andy/Desktop/data/usage.txt", usageHistory, false)
+//       this.writeHistoryToFile("/home/andy/Desktop/data/predicted.txt", predictedHistory, false)
 
       println("done!")
       sender() ! "The task is done!"
