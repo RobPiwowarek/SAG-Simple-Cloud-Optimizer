@@ -26,7 +26,7 @@ lazy val commonSettings = Seq(
 
 lazy val dependencies = Seq(
   libraryDependencies ++= {
-    val akkaV                   = "2.6.4"
+    val akkaV                   = "2.5.31"
     val scalaTestV              = "3.1.1"
 
     Seq(
