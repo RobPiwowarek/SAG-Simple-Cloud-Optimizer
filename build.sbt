@@ -28,9 +28,17 @@ lazy val dependencies = Seq(
   libraryDependencies ++= {
     val akkaV                   = "2.5.31"
     val scalaTestV              = "3.1.1"
+    val slickV                  = "3.3.2"
+    val slf4jV                  = "1.6.4"
+    val h2V                     = "1.4.200"
 
     Seq(
       "com.typesafe.akka"              %% "akka-actor"                                 % akkaV,
+      "com.typesafe.slick"             %% "slick"                                      % slickV,
+      // slick wants these 2
+      "org.slf4j"                       % "slf4j-nop"                                  % slf4jV,
+      "com.typesafe.slick"             %% "slick-hikaricp"                             % slickV,
+      "com.h2database"                  % "h2"                                         % h2V,
 
       "com.typesafe.akka"              %% "akka-testkit"                               % akkaV                     % Test,
       "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test
