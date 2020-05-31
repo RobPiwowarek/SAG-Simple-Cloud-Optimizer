@@ -9,9 +9,9 @@ import pl.rpw.core.vm.message.{TaskMessage, TaskSpecification}
 
 import scala.collection.mutable
 
-class GlobalUtilityActor(val hypervisor: mutable.HashSet[ActorRef])
+class GlobalUtilityActor(val hypervisors: mutable.HashSet[ActorRef])
                         (implicit val actorSystem: ActorSystem) extends Actor {
-  private var usersVMs = Map[String, List[ActorRef]]()
+  private var VMs = Map[String, List[ActorRef]]()
 
   override def receive: Receive = {
     case VirtualMachineRequestMassage(userId, specification) =>
@@ -37,8 +37,8 @@ class GlobalUtilityActor(val hypervisor: mutable.HashSet[ActorRef])
 
   private def addVmToMap(userId: String,
                          vm: ActorRef) = {
-    val vmList = usersVMs(userId) :+ vm
-    usersVMs = usersVMs ++ Map(userId -> vmList)
+    val vmList = VMs(userId) :+ vm
+    VMs = VMs ++ Map(userId -> vmList)
   }
 
   private def createVM(specification: VirtualMachineSpecification,
