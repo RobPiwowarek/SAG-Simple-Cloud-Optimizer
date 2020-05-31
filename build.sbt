@@ -2,7 +2,7 @@ name := "simple-cloud-optimizer"
 
 lazy val commonSettings = Seq(
   organization := s"pl.rpw",
-  scalaVersion := "2.12.9",
+  scalaVersion := "2.11.8",
   scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
