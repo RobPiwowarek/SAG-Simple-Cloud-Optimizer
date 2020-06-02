@@ -17,7 +17,7 @@ class VirtualMachineActor(val cpu: Int,
                           var hypervisor: ActorRef)
   extends Actor {
 
-  private val usedResources = mutable.Map(ResourceType.CPU -> 0, ResourceType.DISK_SPACE -> 0, ResourceType.MEMORY -> 0)
+  private val usedResources = mutable.Map(ResourceType.CPU -> 0, ResourceType.DISK_SPACE -> 0, ResourceType.RAM -> 0)
   private var active = true
 
   private val tasks = new mutable.HashSet[TaskSpecification]
@@ -33,23 +33,23 @@ class VirtualMachineActor(val cpu: Int,
       println("Received migration order: " + hypervisor)
       this.hypervisor = hypervisor
 
-      hypervisor ! AttachVMMessage(
-        this.self,
-        new VirtualMachineSpecification(
-          Map(ResourceType.CPU -> this.cpu, ResourceType.DISK_SPACE -> this.diskSpace, ResourceType.MEMORY -> this.memory)
-        )
-      )
+//      hypervisor ! AttachVMMessage(
+//        this.self,
+//        new VirtualMachineSpecification(
+//          Map(ResourceType.CPU -> this.cpu, ResourceType.DISK_SPACE -> this.diskSpace, ResourceType.RAM -> this.memory)
+//        )
+//      )
   }
 
   def allocateResources(cpu: Int, memory: Int, diskSpace: Int): Unit = {
     usedResources(ResourceType.CPU) += cpu
-    usedResources(ResourceType.MEMORY) += memory
+    usedResources(ResourceType.RAM) += memory
     usedResources(ResourceType.DISK_SPACE) += diskSpace
   }
 
   def freeResources(cpu: Int, memory: Int, diskSpace: Int): Unit = {
     usedResources(ResourceType.CPU) -= cpu
-    usedResources(ResourceType.MEMORY) -= memory
+    usedResources(ResourceType.RAM) -= memory
     usedResources(ResourceType.DISK_SPACE) -= diskSpace
   }
 
@@ -58,13 +58,13 @@ class VirtualMachineActor(val cpu: Int,
       requestMachinesResources()
 
     allocateResources(specification.resources(ResourceType.CPU),
-      specification.resources(ResourceType.MEMORY),
+      specification.resources(ResourceType.RAM),
       specification.resources(ResourceType.DISK_SPACE))
 
     val task = new Runnable {
       def run(): Unit = {
         freeResources(specification.resources(ResourceType.CPU),
-          specification.resources(ResourceType.MEMORY),
+          specification.resources(ResourceType.RAM),
           specification.resources(ResourceType.DISK_SPACE))
 
         val actorSystem = ActorSystem()
@@ -98,7 +98,7 @@ class VirtualMachineActor(val cpu: Int,
 
   def canExecuteTask(specification: TaskSpecification): Boolean = {
     val sufficientCpu = specification.resources(ResourceType.CPU) < cpu - usedResources(ResourceType.CPU)
-    val sufficientMemory = specification.resources(ResourceType.MEMORY) < cpu - usedResources(ResourceType.MEMORY)
+    val sufficientMemory = specification.resources(ResourceType.RAM) < cpu - usedResources(ResourceType.RAM)
     val sufficientDiskSpace = specification.resources(ResourceType.DISK_SPACE) < cpu - usedResources(ResourceType.DISK_SPACE)
 
     sufficientCpu && sufficientMemory && sufficientDiskSpace

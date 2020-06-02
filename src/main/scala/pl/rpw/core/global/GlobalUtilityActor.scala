@@ -1,24 +1,60 @@
 package pl.rpw.core.global
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import akka.util.Timeout
 import pl.rpw.core.ResourceType
 import pl.rpw.core.global.message.{OverprovisioningMessage, TaskFinishedMessage, TaskRequestMessage, UnderprovisioningMessage, VirtualMachineRequestMassage}
+import pl.rpw.core.persistance.{Hypervisor, HypervisorRepository, VM, VMRepository, VMState}
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
 import pl.rpw.core.vm.VirtualMachineActor
 import pl.rpw.core.vm.message.{TaskMessage, TaskSpecification}
 
 import scala.collection.mutable
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.util.Random
 
-class GlobalUtilityActor(val hypervisors: mutable.HashSet[ActorRef])
-                        (implicit val actorSystem: ActorSystem) extends Actor {
-  private var VMs = Map[String, List[ActorRef]]()
+class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
+                        extends Actor {
+  private val actorSystem = context.system
+  private val hypervisorRepository = new HypervisorRepository()
+  private val vmRepository = new VMRepository()
+
+  private val VMs = mutable.HashMap[String, ActorRef]()
+  private val hypervisors = mutable.HashMap[String, ActorRef]()
+
+  initHypervisors()
+  initVirtualMachines()
+
+  private def initVirtualMachines(): Unit = {
+    val initialVMs = vmRepository.findAll()
+    initialVMs.foreach(vm => {
+      val id = vm.id
+      val path = "vm/" + id
+      val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+      VMs.put(id, ref)
+    })
+  }
+
+  private def initHypervisors(): Unit = {
+    val initialHypervisors = hypervisorRepository.findAll()
+    initialHypervisors.foreach(h => {
+      val id = h.id
+      val path = "hypervisor/" + id
+      val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+      hypervisors.put(id, ref)
+    })
+  }
 
   override def receive: Receive = {
     case VirtualMachineRequestMassage(userId, specification) =>
-      val hypervisor = selectHipervisor(specification)
+      val hypervisor = HypervisorSelector.selectHypervisor(specification, hypervisorRepository)
       val vm = createVM(specification, hypervisor)
+      val hypervisorRef = hypervisors.get(hypervisor.id).orNull
 
-      hypervisor ! AttachVMMessage(vm, specification)
+      hypervisorRef ! AttachVMMessage(vm, specification)
       addVmToMap(userId, vm)
 
     case TaskRequestMessage(userId, specification) =>
@@ -35,28 +71,28 @@ class GlobalUtilityActor(val hypervisors: mutable.HashSet[ActorRef])
       //respond to local agent about task execution
   }
 
-  private def addVmToMap(userId: String,
-                         vm: ActorRef) = {
-    val vmList = VMs(userId) :+ vm
-    VMs = VMs ++ Map(userId -> vmList)
+  private def addVmToMap(vmId: String, vm: ActorRef) = {
+    VMs.put(vmId, vm)
   }
 
   private def createVM(specification: VirtualMachineSpecification,
-                       hypervisor: ActorRef) = {
-    actorSystem.actorOf(Props(
-      new VirtualMachineActor(
-        specification.resources(ResourceType.CPU),
-        specification.resources(ResourceType.MEMORY),
-        specification.resources(ResourceType.DISK_SPACE),
-        hypervisor
-      )))
+                       hypervisor: Hypervisor) = {
+    val id = Random.nextString(32)
+    val ref = actorSystem.actorOf(Props(
+        new VirtualMachineActor(
+          specification.cpu, specification.ram, specification.disk, hypervisors.get(hypervisor.id).orNull)),
+      "/vm/" + id)
+    if (actors != null) {
+      actors.put(id, ref)
+    }
+
+    val vm = VM(id, VMState.CREATED.toString, specification.cpu, specification.ram, specification.disk,
+      specification.userId, hypervisor.id, specification.cpu, specification.ram, specification.disk)
+    vmRepository.save(vm)
+    VMs.put(id, ref)
+    ref
   }
 
-  def selectHipervisor(specification: VirtualMachineSpecification): ActorRef = {
-    // using MaxMin strategy choose resource that is most relevant for the vm,
-    // then choose hipervisor (physical machine) that has the least of it amongst those which can run the vm and not be overloaded
-    ???
-  }
 
   def selectVM(userId: String, specification: TaskSpecification): ActorRef = {
     // using MaxMin strategy choose resource that is most relevant for the task,

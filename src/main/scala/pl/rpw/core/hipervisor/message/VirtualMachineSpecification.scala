@@ -1,7 +1,5 @@
 package pl.rpw.core.hipervisor.message
 
-import pl.rpw.core.ResourceType
-
-class VirtualMachineSpecification(val resources: Map[ResourceType.Value, Int]) {
+class VirtualMachineSpecification(val cpu: Int, val ram: Int, val disk: Int, val userId: String) {
 
 }

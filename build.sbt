@@ -31,6 +31,8 @@ lazy val dependencies = Seq(
     val slickV                  = "3.3.2"
     val slf4jV                  = "1.6.4"
     val h2V                     = "1.4.200"
+    val VmbV                    = "1.1.0"
+    val playLiquibaseV          = "2.2"
 
     Seq(
       "com.typesafe.akka"              %% "akka-actor"                                 % akkaV,
@@ -40,8 +42,12 @@ lazy val dependencies = Seq(
       "com.typesafe.slick"             %% "slick-hikaricp"                             % slickV,
       "com.h2database"                  % "h2"                                         % h2V,
 
+      "de.aktey.akka.visualmailbox"    %% "collector"                                  % VmbV,
+      "de.aktey.akka.visualmailbox"    %% "common"                                     % VmbV,
+
       "com.typesafe.akka"              %% "akka-testkit"                               % akkaV                     % Test,
-      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test
+      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
+      "com.ticketfly"                  %% "play-liquibase"                             % playLiquibaseV
     )
   }
 )

@@ -1,4 +1,4 @@
-package pl.rpw.core.global.persistance
+package pl.rpw.core.persistance
 
 object VMState extends Enumeration {
   val CREATED, IDLE, ACTIVE, DEAD, MIGRATING = Value
