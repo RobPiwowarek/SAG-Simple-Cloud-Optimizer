@@ -57,15 +57,15 @@ class VirtualMachineActor(val cpu: Int,
     if (!active)
       requestMachinesResources()
 
-    allocateResources(specification.resources(ResourceType.CPU),
-      specification.resources(ResourceType.RAM),
-      specification.resources(ResourceType.DISK_SPACE))
+//    allocateResources(specification.resources(ResourceType.CPU),
+//      specification.resources(ResourceType.RAM),
+//      specification.resources(ResourceType.DISK_SPACE))
 
     val task = new Runnable {
       def run(): Unit = {
-        freeResources(specification.resources(ResourceType.CPU),
-          specification.resources(ResourceType.RAM),
-          specification.resources(ResourceType.DISK_SPACE))
+//        freeResources(specification.resources(ResourceType.CPU),
+//          specification.resources(ResourceType.RAM),
+//          specification.resources(ResourceType.DISK_SPACE))
 
         val actorSystem = ActorSystem()
         val globalUtilityActor = actorSystem.actorSelection("global_utility")
@@ -97,10 +97,11 @@ class VirtualMachineActor(val cpu: Int,
   }
 
   def canExecuteTask(specification: TaskSpecification): Boolean = {
-    val sufficientCpu = specification.resources(ResourceType.CPU) < cpu - usedResources(ResourceType.CPU)
-    val sufficientMemory = specification.resources(ResourceType.RAM) < cpu - usedResources(ResourceType.RAM)
-    val sufficientDiskSpace = specification.resources(ResourceType.DISK_SPACE) < cpu - usedResources(ResourceType.DISK_SPACE)
-
-    sufficientCpu && sufficientMemory && sufficientDiskSpace
+//    val sufficientCpu = specification.resources(ResourceType.CPU) < cpu - usedResources(ResourceType.CPU)
+//    val sufficientMemory = specification.resources(ResourceType.RAM) < cpu - usedResources(ResourceType.RAM)
+//    val sufficientDiskSpace = specification.resources(ResourceType.DISK_SPACE) < cpu - usedResources(ResourceType.DISK_SPACE)
+//
+//    sufficientCpu && sufficientMemory && sufficientDiskSpace
+    true
   }
 }

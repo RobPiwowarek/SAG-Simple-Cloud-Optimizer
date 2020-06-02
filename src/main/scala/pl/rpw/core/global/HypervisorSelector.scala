@@ -1,13 +1,12 @@
 package pl.rpw.core.global
 
 import pl.rpw.core.ResourceType
-import pl.rpw.core.persistance.{Hypervisor, HypervisorRepository}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
+import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
 
 object HypervisorSelector {
-  def selectMostRelevantResource(specification: VirtualMachineSpecification,
-                                 hypervisorRepository: HypervisorRepository) : ResourceType.Value = {
-    val allHypervisors = hypervisorRepository.findAll()
+  def selectMostRelevantResource(specification: VirtualMachineSpecification) : ResourceType.Value = {
+    val allHypervisors = HypervisorRepository.findAll()
 
     val availableCpu = allHypervisors.map(_.freeCpu).reduce(Integer.sum)
     val availableRam = allHypervisors.map(_.freeRam).reduce(Integer.sum)
@@ -39,9 +38,8 @@ object HypervisorSelector {
   }
 
   def selectHypervisorByMaxMin(selectedHypervisors: Seq[Hypervisor],
-                               hypervisorRepository: HypervisorRepository,
                                specification: VirtualMachineSpecification): Hypervisor = {
-    val resource = selectMostRelevantResource(specification, hypervisorRepository)
+    val resource = selectMostRelevantResource(specification)
     val orderFunction = if (resource == ResourceType.CPU) {
       (hypervisor1: Hypervisor, hypervisor2: Hypervisor) => compareFreeCpu(hypervisor1, hypervisor2)
     } else if (resource == ResourceType.RAM) {
@@ -52,23 +50,22 @@ object HypervisorSelector {
     selectedHypervisors.sortWith(orderFunction).head
   }
 
-  def selectHypervisor(specification: VirtualMachineSpecification,
-                       hypervisorRepository: HypervisorRepository): Hypervisor = {
+  def selectHypervisor(specification: VirtualMachineSpecification): Hypervisor = {
     // using MaxMin strategy choose resource that is most relevant for the vm,
     // then choose hipervisor (physical machine) that has the least of it amongst those
     // which can run the vm and not be overloaded
-    val activeHypervisors = hypervisorRepository.findActiveWithEnoughFreeResources(
+    val activeHypervisors = HypervisorRepository.findActiveWithEnoughFreeResources(
       specification.cpu, specification.ram, specification.disk)
     if (activeHypervisors.isEmpty) {
-      val idleHypervisors = hypervisorRepository.findIdleWithEnoughFreeResources(
+      val idleHypervisors = HypervisorRepository.findIdleWithEnoughFreeResources(
         specification.cpu, specification.ram, specification.disk)
       if (idleHypervisors.isEmpty) {
         // no suitable machine
         // exceptional situation
       }
-      selectHypervisorByMaxMin(idleHypervisors, hypervisorRepository, specification)
+      selectHypervisorByMaxMin(idleHypervisors, specification)
     } else {
-      selectHypervisorByMaxMin(activeHypervisors, hypervisorRepository, specification)
+      selectHypervisorByMaxMin(activeHypervisors, specification)
     }
   }
 }

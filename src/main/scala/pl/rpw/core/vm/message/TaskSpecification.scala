@@ -4,6 +4,8 @@ import pl.rpw.core.ResourceType
 
 class TaskSpecification(val taskId: String,
                         val time: Int,
-                        val resources: Map[ResourceType.Value, Int]) {
+                        val cpu: Int,
+                        val ram: Int,
+                        val disk: Int) {
 
 }

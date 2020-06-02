@@ -1,6 +1,4 @@
 package pl.rpw.core.hipervisor.message
 
-import akka.actor.ActorRef
-
-final case class AttachVMMessage(val virtualMachine: ActorRef,
+final case class AttachVMMessage(val vmId: String,
                                  val machineSpecification: VirtualMachineSpecification)

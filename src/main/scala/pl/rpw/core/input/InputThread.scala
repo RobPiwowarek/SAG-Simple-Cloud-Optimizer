@@ -1,10 +1,18 @@
 package pl.rpw.core.input
 
+import java.util.concurrent.TimeUnit
+
 import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.util.Timeout
+import pl.rpw.core.global.message.VirtualMachineRequestMassage
+import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.vm.VirtualMachineActor
 
 import scala.collection.mutable
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.io.StdIn
+import scala.util.{Failure, Success}
 
 class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef]) extends Thread {
 
@@ -21,7 +29,7 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
 
   def createActor(actorType: String, id: String, data: String): ActorRef = {
     val ref = actorType match {
-      case "VM" => createVM(data)
+      case "VM" | "vm" => createVM(data)
     }
     actors.put(id, ref)
     ref
@@ -44,7 +52,32 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
         println("Stopping: " + ref)
         actors.remove(data)
         actorSystem.stop(ref)
-      }}
+      }
+      }
+  }
+
+  def requestVM(specification: Array[String]): Unit = {
+    implicit val timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
+    implicit val ec = scala.concurrent.ExecutionContext.global
+    actorSystem.actorSelection("user/GUA").resolveOne().onComplete{
+      case Success(ref) => {
+        val vmSpecification = new VirtualMachineSpecification(
+          Integer.parseInt(specification(0)),
+          Integer.parseInt(specification(1)),
+          Integer.parseInt(specification(2)))
+        ref ! VirtualMachineRequestMassage("user", vmSpecification)
+      }
+      case Failure(exception) => println("Cannot find GUA")
+    }
+  }
+
+  def requestAgent(data: String): Unit = {
+    val actorType = data.split(" ")(0)
+    val specification = data.split(" ")(1).split("/")
+    actorType match {
+      case "vm" => requestVM(specification)
+      case _ => println("no such type")
+    }
   }
 
   override def run(): Unit = {
@@ -59,6 +92,9 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
         }
         case "stop" => {
           stopAgent(data)
+        }
+        case "request" => {
+          requestAgent(data)
         }
         case "task" => print("task", data)
       }
