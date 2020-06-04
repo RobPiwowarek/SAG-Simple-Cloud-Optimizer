@@ -19,12 +19,12 @@ object MainApp extends App {
 
   val hv1 = Hypervisor("hv-1", "ACTIVE", 3, 3, 3, 3, 3, 3)
   val hv2 = Hypervisor("hv-2", "ACTIVE", 4, 5, 6, 4, 5, 6)
-  HypervisorRepository.save(hv1)
-  HypervisorRepository.save(hv2)
+  HypervisorRepository.insert(hv1)
+  HypervisorRepository.insert(hv2)
   system.actorOf(
-    Props(new HypervisorActor(3, 3, 3)), "hv-1")
+    Props(new HypervisorActor(3, 3, 3, "hv-1")), "hv-1")
   system.actorOf(
-    Props(new HypervisorActor(4, 5, 6)), "hv-2")
+    Props(new HypervisorActor(4, 5, 6, "hv-2")), "hv-2")
 
   var actors = new mutable.HashMap[String, ActorRef]
   val globalUtilityActor = system.actorOf(

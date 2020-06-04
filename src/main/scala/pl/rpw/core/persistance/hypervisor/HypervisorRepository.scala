@@ -43,8 +43,13 @@ object HypervisorRepository {
     Await.result(db.run(query.result), Duration.Inf).head
   }
 
-  def save(hypervisor: Hypervisor): Unit = {
+  def insert(hypervisor: Hypervisor): Unit = {
     val insertQuery = DBIO.seq(tableQuery += hypervisor)
     Await.result(db.run(insertQuery), Duration.Inf)
+  }
+
+  def update(hypervisor: Hypervisor): Unit = {
+    val updateQuery = tableQuery.filter(_.id === hypervisor.id).update(hypervisor)
+    Await.result(db.run(updateQuery), Duration.Inf)
   }
 }

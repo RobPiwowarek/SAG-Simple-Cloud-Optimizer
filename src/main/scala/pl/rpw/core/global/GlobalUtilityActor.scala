@@ -27,20 +27,18 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
   private def initVirtualMachines(): Unit = {
     val initialVMs = VMRepository.findAll()
     initialVMs.foreach(vm => {
-      val id = vm.id
-      val path = "user/" + id
+      val path = "user/" + vm.id
       val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
-      VMs.put(id, ref)
+      VMs.put(vm.id, ref)
     })
   }
 
   private def initHypervisors(): Unit = {
     val initialHypervisors = HypervisorRepository.findAll()
     initialHypervisors.foreach(h => {
-      val id = h.id
-      val path = "user/" + id
+      val path = "user/" + h.id
       val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
-      hypervisors.put(id, ref)
+      hypervisors.put(h.id, ref)
     })
   }
 
@@ -49,8 +47,7 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
       val hypervisor = HypervisorSelector.selectHypervisor(specification)
       val vm = createVM(userId, specification, hypervisor)
       val hypervisorRef = hypervisors.get(hypervisor.id).orNull
-
-      hypervisorRef ! AttachVMMessage(vm.id, specification)
+      hypervisorRef ! AttachVMMessage(vm.id)
 
     case TaskRequestMessage(userId, specification) =>
       val vm = VMSelector.selectVM(userId, specification)

@@ -4,109 +4,90 @@ import akka.actor.{Actor, ActorRef, ActorSystem}
 import pl.rpw.core.ResourceType
 import pl.rpw.core.global.message.OverprovisioningMessage
 import pl.rpw.core.hipervisor.message._
+import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
 import pl.rpw.core.persistance.vm.{VMRepository, VMState}
 
-class HypervisorActor(val cpu: Int,
-                      val memory: Int,
-                      val diskSpace: Int) extends Actor {
-  //  private var virtualMachines = Map[ActorRef, VirtualMachineSpecification]()
-  //  private val overprovisioningThreshold = 0.90
-  //  private val underprovisioningThreshold = 0.70
+class HypervisorActor(val availableCpu: Int,
+                      val availableRam: Int,
+                      val availableDisk: Int,
+                      val id: String,
+                      var globalUtility: ActorRef = null) extends Actor {
+
+  private val overprovisioningThreshold = 0.90
+  private val underprovisioningThreshold = 0.70
 
   override def receive: Receive = {
-    case AttachVMMessage(vmId, specification) =>
-      println("Received attach: " + vmId + ", " + specification)
+    case AttachVMMessage(vmId) =>
+      println("Received attach: " + vmId)
       val vm = VMRepository.findById(vmId)
       vm.state = VMState.IDLE.toString
       VMRepository.update(vm)
-    //
-    //    case DetachVMMessage(virtualMachine) =>
-    //      println("Received detach: " + virtualMachine)
-    //
-    //      val specification = virtualMachines.get(virtualMachine).orNull
 
-    //      freeResources(
-    //        specification.resources(ResourceType.CPU),
-    //        specification.resources(ResourceType.RAM),
-    //        specification.resources(ResourceType.DISK_SPACE)
-    //      )
+    case DetachVMMessage(vmId) =>
+      println("Received detach: " + vmId)
+      val VM = VMRepository.findById(vmId)
+      freeResources(VM.cpu, VM.ram, VM.disk)
 
-    //      virtualMachines = virtualMachines - virtualMachine
-    //
-    //    case AllocateResourcesMessage(virtualMachine) =>
-    //      println("Received allocate: " + virtualMachine)
-    //
-    //      val specification = virtualMachines(virtualMachine)
+    case AllocateResourcesMessage(vmId) =>
+      println("Received allocate: " + vmId)
+      val VM = VMRepository.findById(vmId)
+      allocateResources(VM.cpu, VM.ram, VM.disk)
 
-    //      allocateResources(
-    //        specification.resources(ResourceType.CPU),
-    //        specification.resources(ResourceType.RAM),
-    //        specification.resources(ResourceType.DISK_SPACE)
-    //      )
-
-    //    case FreeResourcesMessage(virtualMachine) =>
-    //      println("Received free: " + virtualMachine)
-    //
-    //      val specification = virtualMachines(virtualMachine)
-    //
-    //      freeResources(
-    //        specification.resources(ResourceType.CPU),
-    //        specification.resources(ResourceType.RAM),
-    //        specification.resources(ResourceType.DISK_SPACE)
-    //      )
+    case FreeResourcesMessage(vmId) =>
+      println("Received free: " + vmId)
+      val VM = VMRepository.findById(vmId)
+      freeResources(VM.cpu, VM.ram, VM.disk)
   }
 
-  //  def checkOverprovisioningAndNotifyGlobalAgent(): Unit = {
-  //    val cpuUsage = usedResources(ResourceType.CPU) / cpu
-  //    val memoryUsage = usedResources(ResourceType.RAM) / memory
-  //    val diskUsage = usedResources(ResourceType.DISK_SPACE) / diskSpace
-  //
-  //    if (cpuUsage > overprovisioningThreshold || memoryUsage > overprovisioningThreshold || diskUsage > overprovisioningThreshold) {
-  //      val globalUtilityActor = actorSystem.actorSelection("global_utility")
-  //      globalUtilityActor ! OverprovisioningMessage(self)
-  //    }
-  //  }
-  //
-  //  def checkUnderprovisioningAndNotifyGlobalAgent(): Unit = {
-  //    val cpuUsage = usedResources(ResourceType.CPU) / cpu
-  //    val memoryUsage = usedResources(ResourceType.RAM) / memory
-  //    val diskUsage = usedResources(ResourceType.DISK_SPACE) / diskSpace
-  //
-  //    if (cpuUsage < underprovisioningThreshold || memoryUsage < underprovisioningThreshold || diskUsage < underprovisioningThreshold) {
-  //      val globalUtilityActor = actorSystem.actorSelection("global_utility")
-  //      globalUtilityActor ! OverprovisioningMessage(self)
-  //    }
-  //  }
-  //
-  //  def allocateResources(cpu: Int,
-  //                        memory: Int,
-  //                        diskSpace: Int): Unit = {
-  //    usedResources = Map(
-  //      ResourceType.CPU -> (usedResources(ResourceType.CPU) + cpu),
-  //      ResourceType.RAM -> (usedResources(ResourceType.RAM) + memory),
-  //      ResourceType.DISK_SPACE -> (usedResources(ResourceType.DISK_SPACE) + diskSpace)
-  //    )
-  //
-  //    checkOverprovisioningAndNotifyGlobalAgent()
-  //  }
-  //
-  //  def freeResources(cpu: Int,
-  //                    memory: Int,
-  //                    diskSpace: Int): Unit = {
-  //    usedResources = Map(
-  //      ResourceType.CPU -> (usedResources(ResourceType.CPU) - cpu),
-  //      ResourceType.RAM -> (usedResources(ResourceType.RAM) - memory),
-  //      ResourceType.DISK_SPACE -> (usedResources(ResourceType.DISK_SPACE) - diskSpace)
-  //    )
-  //
-  //    checkUnderprovisioningAndNotifyGlobalAgent()
-  //  }
-  //
-  //  def canRunVM(specification: VirtualMachineSpecification): Boolean = {
-  //    val sufficientCpu = specification.resources(ResourceType.CPU) < cpu - usedResources(ResourceType.CPU)
-  //    val sufficientMemory = specification.resources(ResourceType.RAM) < cpu - usedResources(ResourceType.RAM)
-  //    val sufficientDiskSpace = specification.resources(ResourceType.DISK_SPACE) < cpu - usedResources(ResourceType.DISK_SPACE)
-  //
-  //    sufficientCpu && sufficientMemory && sufficientDiskSpace
-  //  }
+  def checkOverprovisioningAndNotifyGlobalAgent(hypervisor: Hypervisor): Unit = {
+    val cpuUsage = (availableCpu - hypervisor.freeCpu) / availableCpu
+    val memoryUsage = (availableRam - hypervisor.freeRam) / availableRam
+    val diskUsage = (availableDisk - hypervisor.freeDisk) / availableDisk
+
+    if (cpuUsage > overprovisioningThreshold || memoryUsage > overprovisioningThreshold || diskUsage > overprovisioningThreshold) {
+      globalUtility ! OverprovisioningMessage(self)
+    }
+  }
+
+  def checkUnderprovisioningAndNotifyGlobalAgent(hypervisor: Hypervisor): Unit = {
+    val cpuUsage = (availableCpu - hypervisor.freeCpu) / availableCpu
+    val memoryUsage = (availableRam - hypervisor.freeRam) / availableRam
+    val diskUsage = (availableDisk - hypervisor.freeDisk) / availableDisk
+
+    if (cpuUsage < underprovisioningThreshold || memoryUsage < underprovisioningThreshold || diskUsage < underprovisioningThreshold) {
+      globalUtility ! OverprovisioningMessage(self)
+    }
+  }
+
+
+  def allocateResources(cpu: Int,
+                        ram: Int,
+                        disk: Int): Unit = {
+    val hypervisor = HypervisorRepository.findById(id)
+    hypervisor.freeCpu -= cpu
+    hypervisor.freeRam -= ram
+    hypervisor.freeDisk -= disk
+    if (hypervisor.state.equals(HypervisorState.IDLE.toString)) {
+      hypervisor.state = HypervisorState.ACTIVE.toString
+    }
+    HypervisorRepository.update(hypervisor)
+    checkOverprovisioningAndNotifyGlobalAgent(hypervisor)
+  }
+
+  def freeResources(cpu: Int,
+                    ram: Int,
+                    disk: Int): Unit = {
+    val hypervisor = HypervisorRepository.findById(id)
+    hypervisor.freeCpu += cpu
+    hypervisor.freeRam += ram
+    hypervisor.freeDisk += disk
+    if (hypervisor.freeCpu == hypervisor.cpu
+      && hypervisor.freeRam == hypervisor.ram
+      && hypervisor.freeDisk == hypervisor.disk) {
+      hypervisor.state = HypervisorState.IDLE.toString
+    }
+    HypervisorRepository.update(hypervisor)
+    checkUnderprovisioningAndNotifyGlobalAgent(hypervisor)
+  }
+  
 }
