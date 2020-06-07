@@ -13,6 +13,7 @@ import org.apache.spark.{SparkContext, sql}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
+
 class LocalAgent extends Actor{
 
   //creating Spark object
@@ -23,7 +24,26 @@ class LocalAgent extends Actor{
 
   val n_iterations = 5000 //number of iterations in which the prediction is made
   val n_iterations_retrain = 1000 //number of iterations after which the model is refreshed
-  val historyFilePath = "./../../../../../data/history.txt" //filepath for time series of usage history
+  val rootFilePath = "/home/andy/Desktop/sag_projekt/src/data/"
+  //  val rootFilePath = "./../../../../../data"
+  val historyFilePath = rootFilePath+"history.txt" //filepath for time series of usage history
+
+  var n_predictions: Int = 0
+  var cpu:Int = 0
+  var gpu:Int = 0
+  var disk:Int = 0
+
+  var historyCPU_fp:String = ""
+  var historyGPU_fp:String = ""
+  var historyDisk_fp:String = ""
+
+  var usageHistoryCPU = mutable.Stack(0.0d)
+  var usageHistoryGPU = mutable.Stack(0.0d)
+  var usageHistoryDisk = mutable.Stack(0.0d)
+
+  var modelCPU: GBTRegressionModel = null
+  var modelGPU: GBTRegressionModel = null
+  var modelDisk: GBTRegressionModel = null
 
   def receive = {
     /**
@@ -31,7 +51,58 @@ class LocalAgent extends Actor{
     generate values for sin(t) and predict values for t+1
     at the end save new history usage to the file
      */
-    case "start" =>
+
+    case StartAgent(cpu, gpu, disk) =>
+      this.cpu = cpu
+      this.gpu = gpu
+      this.disk = disk
+
+      println(s"Creating actor with parameters: $cpu, $gpu, $disk ")
+      this.historyCPU_fp = rootFilePath + s"cpu_A=$cpu.txt"
+      this.historyGPU_fp = rootFilePath + s"gpu_A=$gpu.txt"
+      this.historyDisk_fp = rootFilePath + s"disk_A=$disk.txt"
+
+      //generating history for the model
+      this.createUsageHistory("cpu", historyCPU_fp, cpu, 1000)
+      this.createUsageHistory("gpu", historyGPU_fp, gpu, 1000)
+      this.createUsageHistory("disk", historyDisk_fp, disk, 1000)
+      println("Default history created, starting preparing the models.")
+
+      //creating models
+      modelCPU = this.prepareNewModel(historyCPU_fp)
+      println("CPU model created successfully.")
+
+      modelGPU = this.prepareNewModel(historyGPU_fp)
+      println("GPU model created successfully")
+
+      modelDisk = this.prepareNewModel(historyDisk_fp)
+      println("Disk model created successfully")
+
+      sender ! "Agent created"
+
+    case GetNewVM(conservativenessRate) =>
+      //predicting resources usage
+      val cpuPrediction = this.predict(this.modelCPU, this.usageHistoryCPU ) * conservativenessRate
+      val gpuPrediction = this.predict(this.modelGPU, this.usageHistoryGPU ) * conservativenessRate
+      val diskPrediction = this.predict(this.modelDisk, this.usageHistoryDisk ) * conservativenessRate
+
+      //appending real usage to the history of usages
+      this.usageHistoryCPU.push(this.cpu*math.sin(math.toRadians(this.n_predictions)))
+      this.usageHistoryGPU.push(this.gpu*math.sin(math.toRadians(this.n_predictions)))
+      this.usageHistoryDisk.push(this.disk*math.sin(math.toRadians(this.n_predictions)))
+
+      this.n_predictions += 1
+
+      val result = Map(cpu -> cpuPrediction, gpu -> gpuPrediction, disk -> diskPrediction)
+
+      println("Adding new VM.")
+      sender ! result
+
+
+    case "ShutDown" =>
+      context.system.terminate()
+
+    case "test" =>
       println("Starting new agent")
       //loading history of data usage and training model
       var model = this.prepareNewModel(historyFilePath)
@@ -61,8 +132,8 @@ class LocalAgent extends Actor{
         x=x+1
       }
       //saving real data usage and predictions to make visualizations of the process
-//       this.writeHistoryToFile("/home/andy/Desktop/data/usage.txt", usageHistory, false)
-//       this.writeHistoryToFile("/home/andy/Desktop/data/predicted.txt", predictedHistory, false)
+      this.writeHistoryToFile("/home/andy/Desktop/data/usage.txt", usageHistory, false)
+      this.writeHistoryToFile("/home/andy/Desktop/data/predicted.txt", predictedHistory, false)
 
       println("done!")
       sender() ! "The task is done!"
@@ -89,6 +160,30 @@ class LocalAgent extends Actor{
     }
     writer.close()
   }
+  /**
+  Creating usage history and writing it to the file.
+  The sin shape is based of the parameter
+  */
+  private[this] def createUsageHistory(resourceType: String, filePath: String, amplitude:Double, fileLength: Int): Unit ={
+    var value: Double = 0.0d
+    val usageHistory = mutable.Stack(0.0d)
+
+    for (x <- 0 to fileLength){
+      value = amplitude*math.sin(math.toRadians(x))
+      usageHistory.push(value)
+      this.n_predictions += 1
+    }
+    if (resourceType == "cpu"){
+      this.usageHistoryCPU = usageHistory
+    } else if (resourceType == "gpu"){
+      this.usageHistoryGPU = usageHistory
+    } else if (resourceType == "disk"){
+      this.usageHistoryDisk = usageHistory
+    }
+    writeHistoryToFile(filePath, usageHistory, false)
+
+  }
+
   /**
   use the model to predict value in t+1, basing on values from range t-n+1 : t
    */

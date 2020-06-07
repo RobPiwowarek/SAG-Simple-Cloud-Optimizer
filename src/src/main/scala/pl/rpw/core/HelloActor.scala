@@ -2,6 +2,7 @@ package pl.rpw.core
 
 import akka.actor.Actor
 
+
 class HelloActor extends Actor {
   def receive = {
     case "hello" =>
