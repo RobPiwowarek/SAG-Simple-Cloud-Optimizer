@@ -110,7 +110,7 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
           val idleHypervisor = HypervisorSelector.selectDestinationHypervisorFrom(
             new VirtualMachineSpecification(vm.cpu, vm.ram, vm.disk), idleHypervisors, mostExploitedResource)
           if (idleHypervisor == null) {
-            // TODO cannot do the migration
+            return
           }
           idleHypervisor.freeCpu -= vm.cpu
           idleHypervisor.freeRam -= vm.ram
@@ -124,11 +124,18 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
         }
       })
 
-    // TODO check validity of migration
-//    if (migrationSimulation.filter(...).isEmpty) {
-//
-//    }
-    // do the migration
+    val doesItMakeSenseToPerformThisMigration: Boolean = migrationSimulation.map {
+      case (_, hypervisor: Hypervisor) if hypervisor.isOverprovisioning || hypervisor.isUnderprovisioning =>
+        false
+      case _ =>
+        true
+    }.reduce((x, y) => x && y)
+
+    if (doesItMakeSenseToPerformThisMigration) {
+      migrationSimulation.foreach { case (vm, hypervisor) =>
+        VMs(vm.id) ! MigrationMessage(hypervisor.id)
+      }
+    }
   }
 
 }
