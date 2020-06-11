@@ -10,7 +10,8 @@ import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage, TaskSpecification}
 
 import scala.collection.mutable
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class VirtualMachineActor(val id: String,
                           val cpu: Int,
@@ -18,15 +19,18 @@ class VirtualMachineActor(val id: String,
                           val diskSpace: Int)
   extends Actor {
 
+  private val actorSystem = context.system
   private val tasks = new mutable.HashSet[TaskSpecification]
 
   override def receive: Receive = {
     case TaskMessage(specification) =>
+      print("Virtual Machine " + id + " ")
       println("Received task specification: " + specification)
       tasks.add(specification)
       execute(specification)
 
     case MigrationMessage(newHypervisor) =>
+      print("Virtual Machine " + id + " ")
       println("Received migration order: " + newHypervisor)
       val actorSystem = ActorSystem()
       startMigration(actorSystem)
@@ -52,18 +56,18 @@ class VirtualMachineActor(val id: String,
 
   def allocateResources(cpu: Int, ram: Int, disk: Int): Unit = {
     val vm = VMRepository.findById(id)
-    vm.freeCpu += cpu
-    vm.freeRam += ram
-    vm.freeDisk += disk
+    vm.freeCpu -= cpu
+    vm.freeRam -= ram
+    vm.freeDisk -= disk
     vm.state = VMState.ACTIVE.toString
     VMRepository.update(vm)
   }
 
   def freeResources(cpu: Int, ram: Int, disk: Int): Unit = {
     val vm = VMRepository.findById(id)
-    vm.freeCpu -= cpu
-    vm.freeRam -= ram
-    vm.freeDisk -= disk
+    vm.freeCpu += cpu
+    vm.freeRam += ram
+    vm.freeDisk += disk
     if (!vm.hasActivelyUsedResources()) {
       vm.state = VMState.IDLE.toString
     }
@@ -102,14 +106,12 @@ class VirtualMachineActor(val id: String,
   }
 
   private def freeMachinesResources(vm: VM) = {
-    val actorSystem = ActorSystem()
-    val hypervisor = actorSystem.actorSelection("user/" + vm.hypervisor)
+    val hypervisor = Await.result(actorSystem.actorSelection("user/" + vm.hypervisor).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
     hypervisor ! FreeResourcesMessage(id)
   }
 
   def requestMachinesResources(vm: VM) = {
-    val actorSystem = ActorSystem()
-    val hypervisor = actorSystem.actorSelection("user/" + vm.hypervisor)
+    val hypervisor = Await.result(actorSystem.actorSelection("user/" + vm.hypervisor).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
     hypervisor ! AllocateResourcesMessage(id)
   }
 

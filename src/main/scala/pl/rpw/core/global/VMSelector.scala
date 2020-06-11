@@ -1,7 +1,6 @@
 package pl.rpw.core.global
 
 import pl.rpw.core.ResourceType
-import pl.rpw.core.global.HypervisorSelector.{compareFreeCpu, compareFreeDisk, compareFreeRam}
 import pl.rpw.core.persistance.hypervisor.Hypervisor
 import pl.rpw.core.persistance.vm.{VM, VMRepository}
 import pl.rpw.core.vm.message.TaskSpecification
@@ -85,11 +84,11 @@ object VMSelector {
     if (activeVMs.isEmpty) {
       val idleVMs = VMRepository.findIdleByUserAndEnoughFreeResources(
         userId, specification.cpu, specification.ram, specification.disk)
-      if (idleVMs.isEmpty) {
-        // no suitable machine
-        // exceptional situation
+      if (idleVMs.nonEmpty) {
+        selectVMforTaskByMaxMin(idleVMs, specification)
+      } else {
+        null
       }
-      selectVMforTaskByMaxMin(idleVMs, specification)
     } else {
       selectVMforTaskByMaxMin(activeVMs, specification)
     }
@@ -102,11 +101,11 @@ object VMSelector {
     val activeVMs = VMRepository.findActiveByHypervisor(hypervisor.id)
     if (activeVMs.isEmpty) {
       val idleVMs = VMRepository.findIdleByHypervisor(hypervisor.id)
-      if (idleVMs.isEmpty) {
-        // no suitable machine
-        // exceptional situation
+      if (idleVMs.nonEmpty) {
+        selectVMForMigrationByMaxMin(idleVMs, mostRelevantResource)
+      } else {
+        null
       }
-      selectVMForMigrationByMaxMin(idleVMs, mostRelevantResource)
     } else {
       selectVMForMigrationByMaxMin(activeVMs, mostRelevantResource)
     }

@@ -51,4 +51,19 @@ case class Hypervisor(id: String,
       this.freeRam >= specification.ram &
       this.freeDisk >= specification.disk
   }
+
+  def hasUsedResources: Boolean = {
+    this.freeCpu != this.cpu || this.freeRam != this.ram || this.freeDisk != this.disk
+  }
+
+  override def toString: String = {
+    "Hypervisor(id:" + id +
+      ", state: " + state +
+      ", cpu: " + cpu +
+      ", ram: " + ram +
+      ", disk: " + disk +
+      ", freeCpu: " + freeCpu +
+      ", freeRam: " + freeRam +
+      ", freeDisk: " + freeDisk + ")"
+  }
 }

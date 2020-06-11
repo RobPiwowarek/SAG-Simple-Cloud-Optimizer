@@ -46,20 +46,24 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
 
   override def receive: Receive = {
     case VirtualMachineRequestMassage(userId, specification) =>
+      println(specification + " requested from " + userId)
       val hypervisor = HypervisorSelector.selectHypervisor(specification)
       val vm = createVM(userId, specification, hypervisor)
       val hypervisorRef = hypervisors.get(hypervisor.id).orNull
       hypervisorRef ! AttachVMMessage(vm.id)
 
-    case TaskRequestMessage(userId, specification) =>
-      val vm = VMSelector.selectVM(userId, specification)
+    case TaskRequestMessage(specification) =>
+      println(specification + " requested")
+      val vm = VMSelector.selectVM(specification.userId, specification)
       val vmRef = VMs.get(vm.id).orNull
       vmRef ! TaskMessage(specification)
 
     case OverprovisioningMessage(hypervisor) =>
+      println("Overprovisioning from: " + hypervisor)
       migrateMostRelevantMachineIfPossible(HypervisorRepository.findById(hypervisor))
 
     case UnderprovisioningMessage(hypervisor) =>
+      println("Underprovisioning from: " + hypervisor)
       migrateAllMachinesIfPossible(HypervisorRepository.findById(hypervisor))
 
     case TaskFinishedMessage(_) =>
@@ -92,6 +96,7 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
       val vmRef = VMs.get(vm.id).orNull
       vmRef ! MigrationMessage(destinationHypervisor.id)
     } else {
+      println("Cannot migrate " + hypervisor)
       // TODO
     }
   }
@@ -112,6 +117,7 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
           val idleHypervisor = HypervisorSelector.selectDestinationHypervisorFrom(
             new VirtualMachineSpecification(vm.cpu, vm.ram, vm.disk), idleHypervisors, mostExploitedResource)
           if (idleHypervisor == null) {
+            println("Migration of machines on " + hypervisor + " not possible")
             return
           }
           idleHypervisor.freeCpu -= vm.cpu
@@ -137,6 +143,8 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
       migrationSimulation.foreach { case (vm, hypervisor) =>
         VMs(vm.id) ! MigrationMessage(hypervisor.id)
       }
+    } else {
+      println("Migration of machines on " + hypervisor + " not valid")
     }
   }
 

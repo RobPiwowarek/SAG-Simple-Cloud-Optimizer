@@ -4,11 +4,12 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.util.Timeout
-import pl.rpw.core.global.message.VirtualMachineRequestMassage
+import pl.rpw.core.global.message.{TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.persistance.hypervisor.HypervisorRepository
 import pl.rpw.core.persistance.vm.VMRepository
 import pl.rpw.core.vm.VirtualMachineActor
+import pl.rpw.core.vm.message.TaskSpecification
 
 import scala.collection.mutable
 import scala.concurrent.Await
@@ -82,6 +83,25 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
     }
   }
 
+  def requestTask(data: String): Unit = {
+    val specification = data.split("/")
+    implicit val timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
+    implicit val ec = scala.concurrent.ExecutionContext.global
+    actorSystem.actorSelection("user/GUA").resolveOne().onComplete{
+      case Success(ref) => {
+        val taskSpecification: TaskSpecification = new TaskSpecification(
+          specification(0),
+          specification(1),
+          Integer.parseInt(specification(2)),
+          Integer.parseInt(specification(3)),
+          Integer.parseInt(specification(4)),
+          Integer.parseInt(specification(5)))
+        ref ! TaskRequestMessage(taskSpecification)
+      }
+      case Failure(exception) => println("Cannot find GUA")
+    }
+  }
+
   override def run(): Unit = {
     while (true) {
       val line = StdIn.readLine().split(":")
@@ -98,10 +118,12 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
         case "request" => {
           requestAgent(data)
         }
-        case "task" => print("task", data)
+        case "task" => {
+          requestTask(data)
+        }
         case "print" => {
-          HypervisorRepository.findAll()
-          VMRepository.findAll()
+          HypervisorRepository.findAll().foreach(println)
+          VMRepository.findAll().foreach(println)
         }
       }
     }

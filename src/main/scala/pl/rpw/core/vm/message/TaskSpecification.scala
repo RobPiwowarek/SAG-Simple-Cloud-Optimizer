@@ -6,5 +6,12 @@ class TaskSpecification(val taskId: String,
                         val cpu: Int,
                         val ram: Int,
                         val disk: Int) {
-
+  override def toString: String = {
+    "TaskSpecification(taskId:" + taskId +
+      ", userId: " + userId +
+      ", tima: " + time +
+      ", cpu: " + cpu +
+      ", ram: " + ram +
+      ", disk: " + disk +")"
+  }
 }

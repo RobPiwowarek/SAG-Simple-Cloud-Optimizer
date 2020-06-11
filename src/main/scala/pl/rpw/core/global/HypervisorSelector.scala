@@ -84,11 +84,11 @@ object HypervisorSelector {
     if (activeHypervisors.isEmpty) {
       val idleHypervisors = HypervisorRepository.findIdleWithEnoughFreeResources(
         specification.cpu, specification.ram, specification.disk)
-      if (idleHypervisors.isEmpty) {
-        // no suitable machine
-        // exceptional situation
+      if (idleHypervisors.nonEmpty) {
+        selectHypervisorByMaxMin(idleHypervisors, specification)
+      } else {
+        null
       }
-      selectHypervisorByMaxMin(idleHypervisors, specification)
     } else {
       selectHypervisorByMaxMin(activeHypervisors, specification)
     }
@@ -103,11 +103,11 @@ object HypervisorSelector {
     if (activeHypervisors.isEmpty) {
       val idleHypervisors = HypervisorRepository.findIdleWithEnoughFreeResourcesAndIdNot(
         specification.cpu, specification.ram, specification.disk, sourceHypervisor.id)
-      if (idleHypervisors.isEmpty) {
-        // no suitable machine
-        // exceptional situation
+      if (idleHypervisors.nonEmpty) {
+        selectHypervisorByMaxMin(idleHypervisors, specification)
+      } else {
+        null
       }
-      selectHypervisorByMaxMin(idleHypervisors, specification)
     } else {
       selectHypervisorByMaxMin(activeHypervisors, specification)
     }
@@ -119,11 +119,12 @@ object HypervisorSelector {
     // using MaxMin strategy choose resource that is most relevant for the vm,
     // then choose hipervisor (physical machine) that has the least of it amongst those
     // which can run the vm and not be overloaded
-    hypervisors
+    val candidates = hypervisors
       .filter(_.hasEnoughResources(specification))
       .sortWith(getOrderFunction(mostExploitedResource))
       .reverse
-      .head
+
+    candidates.headOption.orNull
   }
 
 }
