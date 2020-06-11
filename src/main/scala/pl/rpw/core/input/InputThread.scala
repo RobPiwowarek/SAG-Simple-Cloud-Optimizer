@@ -6,6 +6,8 @@ import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.util.Timeout
 import pl.rpw.core.global.message.VirtualMachineRequestMassage
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
+import pl.rpw.core.persistance.hypervisor.HypervisorRepository
+import pl.rpw.core.persistance.vm.VMRepository
 import pl.rpw.core.vm.VirtualMachineActor
 
 import scala.collection.mutable
@@ -23,7 +25,7 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
         id,
         Integer.parseInt(specification(0)),
         Integer.parseInt(specification(1)),
-        Integer.parseInt(specification(2)),
+        Integer.parseInt(specification(2))
       )))
   }
 
@@ -97,6 +99,10 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
           requestAgent(data)
         }
         case "task" => print("task", data)
+        case "print" => {
+          HypervisorRepository.findAll()
+          VMRepository.findAll()
+        }
       }
     }
   }

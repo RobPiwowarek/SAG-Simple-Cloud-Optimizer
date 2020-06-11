@@ -9,7 +9,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 object VMRepository {
-  def findByHypervisor(hipervisor: String): Seq[VM] = {
+  def findByHypervisor(hypervisor: String): Seq[VM] = {
     val query = tableQuery
       .filter(_.hypervisor === hypervisor)
     Await.result(db.run(query.result), Duration.Inf)

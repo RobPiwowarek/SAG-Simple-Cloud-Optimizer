@@ -17,8 +17,8 @@ object MainApp extends App {
 
   val system = ActorSystem("SAG-System")
 
-  val hv1 = Hypervisor("hv-1", "ACTIVE", 3, 3, 3, 3, 3, 3)
-  val hv2 = Hypervisor("hv-2", "ACTIVE", 4, 5, 6, 4, 5, 6)
+  val hv1 = Hypervisor(id = "hv-1", state = "IDLE", cpu = 3, ram = 3, disk = 3, freeCpu = 3, freeRam = 3, freeDisk = 3)
+  val hv2 = Hypervisor(id = "hv-2", state = "IDLE", cpu = 4, ram = 5, disk = 6, freeCpu = 4, freeRam = 5, freeDisk = 6)
   HypervisorRepository.insert(hv1)
   HypervisorRepository.insert(hv2)
   system.actorOf(

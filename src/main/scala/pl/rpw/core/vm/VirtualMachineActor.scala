@@ -18,7 +18,6 @@ class VirtualMachineActor(val id: String,
                           val diskSpace: Int)
   extends Actor {
 
-  private var vm = VMRepository.findById(id)
   private val tasks = new mutable.HashSet[TaskSpecification]
 
   override def receive: Receive = {
@@ -35,6 +34,7 @@ class VirtualMachineActor(val id: String,
   }
 
   private def migrateToNewHypervisor(newHypervisor: String, actorSystem: ActorSystem) = {
+    val vm = VMRepository.findById(id)
     vm.hypervisor = newHypervisor
     VMRepository.update(vm)
     val destHypervisor = actorSystem.actorSelection("user/" + vm.hypervisor)
@@ -43,6 +43,7 @@ class VirtualMachineActor(val id: String,
   }
 
   private def startMigration(actorSystem: ActorSystem): Unit = {
+    val vm = VMRepository.findById(id)
     vm.state = VMState.MIGRATING.toString
     VMRepository.update(vm)
     val hypervisor = actorSystem.actorSelection("user/" + vm.hypervisor)
@@ -50,6 +51,7 @@ class VirtualMachineActor(val id: String,
   }
 
   def allocateResources(cpu: Int, ram: Int, disk: Int): Unit = {
+    val vm = VMRepository.findById(id)
     vm.freeCpu += cpu
     vm.freeRam += ram
     vm.freeDisk += disk
@@ -58,6 +60,7 @@ class VirtualMachineActor(val id: String,
   }
 
   def freeResources(cpu: Int, ram: Int, disk: Int): Unit = {
+    val vm = VMRepository.findById(id)
     vm.freeCpu -= cpu
     vm.freeRam -= ram
     vm.freeDisk -= disk
@@ -68,6 +71,7 @@ class VirtualMachineActor(val id: String,
   }
 
   def execute(specification: TaskSpecification): Unit = {
+    val vm = VMRepository.findById(id)
     if (!vm.state.equals(VMState.ACTIVE.toString)) {
       requestMachinesResources(vm)
     }
