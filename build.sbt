@@ -33,6 +33,8 @@ lazy val dependencies = Seq(
     val h2V                     = "1.4.200"
     val VmbV                    = "1.1.0"
     val playLiquibaseV          = "2.2"
+    val scalaLoggingV           = "3.1.0"
+    val logbackV                = "1.1.2"
 
     Seq(
       "com.typesafe.akka"              %% "akka-actor"                                 % akkaV,
@@ -41,6 +43,8 @@ lazy val dependencies = Seq(
       "org.slf4j"                       % "slf4j-nop"                                  % slf4jV,
       "com.typesafe.slick"             %% "slick-hikaricp"                             % slickV,
       "com.h2database"                  % "h2"                                         % h2V,
+      "com.typesafe.scala-logging"     %% "scala-logging"                              % scalaLoggingV,
+      "ch.qos.logback"                  % "logback-classic"                            % logbackV,
 
       "de.aktey.akka.visualmailbox"    %% "collector"                                  % VmbV,
       "de.aktey.akka.visualmailbox"    %% "common"                                     % VmbV,
