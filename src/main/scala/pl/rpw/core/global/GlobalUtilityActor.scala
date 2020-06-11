@@ -3,6 +3,8 @@ package pl.rpw.core.global
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorRef, Props}
+import pl.rpw.core.ResourceType
+import pl.rpw.core.global.VMSelector.{compareCpu, compareDisk, compareRam}
 import pl.rpw.core.global.message._
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
@@ -102,7 +104,7 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
 
     val mostExploitedResource = HypervisorSelector.selectMostExploitedResource(HypervisorRepository.findAll())
     val migrationSimulation = vms
-//      .sortWith(VMSelector.getOrderFunction(mostExploitedResource))
+      .sortWith(getOrderingFunction(mostExploitedResource))
       .map(vm => {
         val activeHypervisor = HypervisorSelector.selectDestinationHypervisorFrom(
             new VirtualMachineSpecification(vm.cpu, vm.ram, vm.disk), activeHypervisors, mostExploitedResource)
@@ -138,4 +140,13 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
     }
   }
 
+  private def getOrderingFunction(resource: ResourceType.Value) = {
+    if (resource == ResourceType.CPU) {
+      (vm1: VM, vm2: VM) => compareCpu(vm1, vm2)
+    } else if (resource == ResourceType.RAM) {
+      (vm1: VM, vm2: VM) => compareRam(vm1, vm2)
+    } else {
+      (vm1: VM, vm2: VM) => compareDisk(vm1, vm2)
+    }
+  }
 }

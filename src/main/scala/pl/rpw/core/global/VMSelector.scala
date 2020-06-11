@@ -39,7 +39,6 @@ object VMSelector {
     vm1.freeDisk <= vm2.freeDisk
   }
 
-
   def compareCpu(vm1: VM, vm2: VM): Boolean = {
     vm1.cpu <= vm2.cpu
   }
@@ -52,8 +51,8 @@ object VMSelector {
     vm1.disk <= vm2.disk
   }
 
-  def selectVMByMaxMin(selectedVMs: Seq[VM],
-                       specification: TaskSpecification): VM = {
+  def selectVMforTaskByMaxMin(selectedVMs: Seq[VM],
+                              specification: TaskSpecification): VM = {
     val resource = selectMostRelevantResource(specification)
     val orderFunction = if (resource == ResourceType.CPU) {
       (vm1: VM, vm2: VM) => compareFreeCpu(vm1, vm2)
@@ -90,9 +89,9 @@ object VMSelector {
         // no suitable machine
         // exceptional situation
       }
-      selectVMByMaxMin(idleVMs, specification)
+      selectVMforTaskByMaxMin(idleVMs, specification)
     } else {
-      selectVMByMaxMin(activeVMs, specification)
+      selectVMforTaskByMaxMin(activeVMs, specification)
     }
   }
 
