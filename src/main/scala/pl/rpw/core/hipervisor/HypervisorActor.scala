@@ -1,7 +1,6 @@
 package pl.rpw.core.hipervisor
 
-import akka.actor.{Actor, ActorRef, ActorSystem}
-import pl.rpw.core.ResourceType
+import akka.actor.{Actor, ActorRef}
 import pl.rpw.core.global.message.OverprovisioningMessage
 import pl.rpw.core.hipervisor.message._
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
@@ -20,7 +19,11 @@ class HypervisorActor(val availableCpu: Int,
     case AttachVMMessage(vmId) =>
       println("Received attach: " + vmId)
       val vm = VMRepository.findById(vmId)
-      vm.state = VMState.IDLE.toString
+      if (vm.hasActivelyUserResources()) {
+        vm.state = VMState.ACTIVE.toString
+      } else {
+        vm.state = VMState.IDLE.toString
+      }
       VMRepository.update(vm)
 
     case DetachVMMessage(vmId) =>
@@ -45,7 +48,7 @@ class HypervisorActor(val availableCpu: Int,
     val diskUsage = (availableDisk - hypervisor.freeDisk) / availableDisk
 
     if (cpuUsage > overprovisioningThreshold || memoryUsage > overprovisioningThreshold || diskUsage > overprovisioningThreshold) {
-      globalUtility ! OverprovisioningMessage(self)
+      globalUtility ! OverprovisioningMessage(this.id)
     }
   }
 
@@ -55,7 +58,7 @@ class HypervisorActor(val availableCpu: Int,
     val diskUsage = (availableDisk - hypervisor.freeDisk) / availableDisk
 
     if (cpuUsage < underprovisioningThreshold || memoryUsage < underprovisioningThreshold || diskUsage < underprovisioningThreshold) {
-      globalUtility ! OverprovisioningMessage(self)
+      globalUtility ! OverprovisioningMessage(this.id)
     }
   }
 

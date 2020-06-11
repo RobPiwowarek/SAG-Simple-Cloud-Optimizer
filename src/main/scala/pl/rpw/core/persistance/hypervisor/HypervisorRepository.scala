@@ -8,6 +8,12 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 object HypervisorRepository {
+  def findByState(state: HypervisorState.Value): Seq[Hypervisor] = {
+    val query = tableQuery
+      .filter(_.state === state.toString())
+    Await.result(db.run(query.result), Duration.Inf)
+  }
+
   val tableQuery = TableQuery[Hypervisors]
   implicit val ec = scala.concurrent.ExecutionContext.global
   val db = DBInitializer.db
@@ -18,6 +24,24 @@ object HypervisorRepository {
 
   def findAll(): Seq[Hypervisor] = {
     Await.result(db.run(tableQuery.result), Duration.Inf)
+  }
+
+  def findActiveWithEnoughFreeResourcesAndIdNot(requiredCpu: Int, requiredRam: Int, requiredDisk: Int, exludedId: String): Seq[Hypervisor] = {
+    findByStateAndEnoughResourcesAndIdNot(HypervisorState.ACTIVE, requiredCpu, requiredRam, requiredDisk, exludedId)
+  }
+
+  def findIdleWithEnoughFreeResourcesAndIdNot(requiredCpu: Int, requiredRam: Int, requiredDisk: Int, exludedId: String): Seq[Hypervisor] = {
+    findByStateAndEnoughResourcesAndIdNot(HypervisorState.IDLE, requiredCpu, requiredRam, requiredDisk, exludedId)
+  }
+
+  def findByStateAndEnoughResourcesAndIdNot(state: HypervisorState.Value, requiredCpu: Int, requiredRam: Int, requiredDisk: Int, exludedId: String): Seq[Hypervisor] = {
+    val query = tableQuery
+      .filter(_.freeCpu >= requiredCpu)
+      .filter(_.freeRam >= requiredRam)
+      .filter(_.freeDisk >= requiredDisk)
+      .filter(_.state === state.toString())
+      .filter(_.id =!= exludedId)
+    Await.result(db.run(query.result), Duration.Inf)
   }
 
   def findActiveWithEnoughFreeResources(requiredCpu: Int, requiredRam: Int, requiredDisk: Int): Seq[Hypervisor] = {

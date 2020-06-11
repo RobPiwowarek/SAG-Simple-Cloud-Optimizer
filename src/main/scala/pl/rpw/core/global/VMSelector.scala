@@ -1,6 +1,8 @@
 package pl.rpw.core.global
 
 import pl.rpw.core.ResourceType
+import pl.rpw.core.global.HypervisorSelector.{compareFreeCpu, compareFreeDisk, compareFreeRam}
+import pl.rpw.core.persistance.hypervisor.Hypervisor
 import pl.rpw.core.persistance.vm.{VM, VMRepository}
 import pl.rpw.core.vm.message.TaskSpecification
 
@@ -37,9 +39,25 @@ object VMSelector {
     vm1.freeDisk <= vm2.freeDisk
   }
 
+  def getOrderFunction(resource: ResourceType.Value): Function2[VM, VM, Boolean] = {
+    if (resource == ResourceType.CPU) {
+      (vm1: VM, vm2: VM) => compareFreeCpu(vm1, vm2)
+    } else if (resource == ResourceType.RAM) {
+      (vm1: VM, vm2: VM) => compareFreeRam(vm1, vm2)
+    } else {
+      (vm1: VM, vm2: VM) => compareFreeDisk(vm1, vm2)
+    }
+  }
+
   def selectVMByMaxMin(selectedVMs: Seq[VM],
                        specification: TaskSpecification): VM = {
     val resource = selectMostRelevantResource(specification)
+    val orderFunction = getOrderFunction(resource)
+    selectedVMs.sortWith(orderFunction).head
+  }
+
+  def selectVMByMaxMin(selectedVMs: Seq[VM],
+                       resource: ResourceType.Value): VM = {
     val orderFunction = if (resource == ResourceType.CPU) {
       (vm1: VM, vm2: VM) => compareFreeCpu(vm1, vm2)
     } else if (resource == ResourceType.RAM) {
@@ -66,6 +84,23 @@ object VMSelector {
       selectVMByMaxMin(idleVMs, specification)
     } else {
       selectVMByMaxMin(activeVMs, specification)
+    }
+  }
+
+  def selectVMToMigrate(hypervisor: Hypervisor): VM = {
+    // using MaxMin strategy choose resource that is most relevant for the hypervisor,
+    // then choose VM that has the most of it 
+    val mostRelevantResource = hypervisor.selectMostExploitedResource()
+    val activeVMs = VMRepository.findActiveByHypervisor(hypervisor.id)
+    if (activeVMs.isEmpty) {
+      val idleVMs = VMRepository.findIdleByHypervisor(hypervisor.id)
+      if (idleVMs.isEmpty) {
+        // no suitable machine
+        // exceptional situation
+      }
+      selectVMByMaxMin(idleVMs, mostRelevantResource)
+    } else {
+      selectVMByMaxMin(activeVMs, mostRelevantResource)
     }
   }
 }

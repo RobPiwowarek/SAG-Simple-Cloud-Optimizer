@@ -16,20 +16,20 @@ import scala.util.{Failure, Success}
 
 class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef]) extends Thread {
 
-  def createVM(data: String): ActorRef = {
+  def createVM(id:String, data: String): ActorRef = {
     val specification = data.split("/")
     actorSystem.actorOf(Props(
       new VirtualMachineActor(
+        id,
         Integer.parseInt(specification(0)),
         Integer.parseInt(specification(1)),
         Integer.parseInt(specification(2)),
-        null
       )))
   }
 
   def createActor(actorType: String, id: String, data: String): ActorRef = {
     val ref = actorType match {
-      case "VM" | "vm" => createVM(data)
+      case "VM" | "vm" => createVM(id, data)
     }
     actors.put(id, ref)
     ref
