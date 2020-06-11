@@ -102,7 +102,7 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
 
     val mostExploitedResource = HypervisorSelector.selectMostExploitedResource(HypervisorRepository.findAll())
     val migrationSimulation = vms
-      .sortWith(VMSelector.getOrderFunction(mostExploitedResource))
+//      .sortWith(VMSelector.getOrderFunction(mostExploitedResource))
       .map(vm => {
         val activeHypervisor = HypervisorSelector.selectDestinationHypervisorFrom(
             new VirtualMachineSpecification(vm.cpu, vm.ram, vm.disk), activeHypervisors, mostExploitedResource)
@@ -115,19 +115,19 @@ class GlobalUtilityActor(var actors: mutable.Map[String, ActorRef] = null)
           idleHypervisor.freeCpu -= vm.cpu
           idleHypervisor.freeRam -= vm.ram
           idleHypervisor.freeDisk -= vm.disk
-          return Tuple2[VM, Hypervisor](vm, idleHypervisor)
+          (vm, idleHypervisor)
         } else {
           activeHypervisor.freeCpu -= vm.cpu
           activeHypervisor.freeRam -= vm.ram
           activeHypervisor.freeDisk -= vm.disk
-          return Tuple2[VM, Hypervisor](vm, activeHypervisor)
+          (vm, activeHypervisor)
         }
       })
 
     // TODO check validity of migration
-    if (migrationSimulation.filter(...).isEmpty) {
-
-    }
+//    if (migrationSimulation.filter(...).isEmpty) {
+//
+//    }
     // do the migration
   }
 

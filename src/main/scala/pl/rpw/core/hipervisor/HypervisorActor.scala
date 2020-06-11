@@ -1,6 +1,7 @@
 package pl.rpw.core.hipervisor
 
 import akka.actor.{Actor, ActorRef}
+import pl.rpw.core.Consts
 import pl.rpw.core.global.message.OverprovisioningMessage
 import pl.rpw.core.hipervisor.message._
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
@@ -12,14 +13,11 @@ class HypervisorActor(val availableCpu: Int,
                       val id: String,
                       var globalUtility: ActorRef = null) extends Actor {
 
-  private val overprovisioningThreshold = 0.90
-  private val underprovisioningThreshold = 0.70
-
   override def receive: Receive = {
     case AttachVMMessage(vmId) =>
       println("Received attach: " + vmId)
       val vm = VMRepository.findById(vmId)
-      if (vm.hasActivelyUserResources()) {
+      if (vm.hasActivelyUsedResources()) {
         vm.state = VMState.ACTIVE.toString
       } else {
         vm.state = VMState.IDLE.toString
@@ -47,7 +45,9 @@ class HypervisorActor(val availableCpu: Int,
     val memoryUsage = (availableRam - hypervisor.freeRam) / availableRam
     val diskUsage = (availableDisk - hypervisor.freeDisk) / availableDisk
 
-    if (cpuUsage > overprovisioningThreshold || memoryUsage > overprovisioningThreshold || diskUsage > overprovisioningThreshold) {
+    if (cpuUsage > Consts.overprovisioningThreshold ||
+      memoryUsage > Consts.overprovisioningThreshold ||
+      diskUsage > Consts.overprovisioningThreshold) {
       globalUtility ! OverprovisioningMessage(this.id)
     }
   }
@@ -57,7 +57,9 @@ class HypervisorActor(val availableCpu: Int,
     val memoryUsage = (availableRam - hypervisor.freeRam) / availableRam
     val diskUsage = (availableDisk - hypervisor.freeDisk) / availableDisk
 
-    if (cpuUsage < underprovisioningThreshold || memoryUsage < underprovisioningThreshold || diskUsage < underprovisioningThreshold) {
+    if (cpuUsage < Consts.underprovisioningThreshold ||
+      memoryUsage < Consts.underprovisioningThreshold ||
+      diskUsage < Consts.underprovisioningThreshold) {
       globalUtility ! OverprovisioningMessage(this.id)
     }
   }

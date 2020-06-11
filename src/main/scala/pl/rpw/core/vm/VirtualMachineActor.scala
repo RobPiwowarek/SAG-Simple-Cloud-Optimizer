@@ -38,7 +38,8 @@ class VirtualMachineActor(val id: String,
     vm.hypervisor = newHypervisor
     VMRepository.update(vm)
     val destHypervisor = actorSystem.actorSelection("user/" + vm.hypervisor)
-    destHypervisor ! DetachVMMessage(this.id)
+    // TODO find new hypervisor
+    destHypervisor ! AttachVMMessage(this.id)
   }
 
   private def startMigration(actorSystem: ActorSystem): Unit = {
@@ -60,7 +61,7 @@ class VirtualMachineActor(val id: String,
     vm.freeCpu -= cpu
     vm.freeRam -= ram
     vm.freeDisk -= disk
-    if (!vm.hasActivelyUserResources()) {
+    if (!vm.hasActivelyUsedResources()) {
       vm.state = VMState.IDLE.toString
     }
     VMRepository.update(vm)
