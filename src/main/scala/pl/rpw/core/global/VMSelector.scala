@@ -39,31 +39,40 @@ object VMSelector {
     vm1.freeDisk <= vm2.freeDisk
   }
 
-  def getOrderFunction(resource: ResourceType.Value): Function2[VM, VM, Boolean] = {
-    if (resource == ResourceType.CPU) {
-      (vm1: VM, vm2: VM) => compareFreeCpu(vm1, vm2)
-    } else if (resource == ResourceType.RAM) {
-      (vm1: VM, vm2: VM) => compareFreeRam(vm1, vm2)
-    } else {
-      (vm1: VM, vm2: VM) => compareFreeDisk(vm1, vm2)
-    }
+
+  def compareCpu(vm1: VM, vm2: VM): Boolean = {
+    vm1.cpu <= vm2.cpu
+  }
+
+  def compareRam(vm1: VM, vm2: VM): Boolean = {
+    vm1.ram <= vm2.ram
+  }
+
+  def compareDisk(vm1: VM, vm2: VM): Boolean = {
+    vm1.disk <= vm2.disk
   }
 
   def selectVMByMaxMin(selectedVMs: Seq[VM],
                        specification: TaskSpecification): VM = {
     val resource = selectMostRelevantResource(specification)
-    val orderFunction = getOrderFunction(resource)
-    selectedVMs.sortWith(orderFunction).head
-  }
-
-  def selectVMByMaxMin(selectedVMs: Seq[VM],
-                       resource: ResourceType.Value): VM = {
     val orderFunction = if (resource == ResourceType.CPU) {
       (vm1: VM, vm2: VM) => compareFreeCpu(vm1, vm2)
     } else if (resource == ResourceType.RAM) {
       (vm1: VM, vm2: VM) => compareFreeRam(vm1, vm2)
     } else {
       (vm1: VM, vm2: VM) => compareFreeDisk(vm1, vm2)
+    }
+    selectedVMs.sortWith(orderFunction).head
+  }
+
+  def selectVMForMigrationByMaxMin(selectedVMs: Seq[VM],
+                                   resource: ResourceType.Value): VM = {
+    val orderFunction = if (resource == ResourceType.CPU) {
+      (vm1: VM, vm2: VM) => compareCpu(vm1, vm2)
+    } else if (resource == ResourceType.RAM) {
+      (vm1: VM, vm2: VM) => compareRam(vm1, vm2)
+    } else {
+      (vm1: VM, vm2: VM) => compareDisk(vm1, vm2)
     }
     selectedVMs.sortWith(orderFunction).head
   }
@@ -89,7 +98,7 @@ object VMSelector {
 
   def selectVMToMigrate(hypervisor: Hypervisor): VM = {
     // using MaxMin strategy choose resource that is most relevant for the hypervisor,
-    // then choose VM that has the most of it 
+    // then choose VM that has the most of it
     val mostRelevantResource = hypervisor.selectMostExploitedResource()
     val activeVMs = VMRepository.findActiveByHypervisor(hypervisor.id)
     if (activeVMs.isEmpty) {
@@ -98,9 +107,9 @@ object VMSelector {
         // no suitable machine
         // exceptional situation
       }
-      selectVMByMaxMin(idleVMs, mostRelevantResource)
+      selectVMForMigrationByMaxMin(idleVMs, mostRelevantResource)
     } else {
-      selectVMByMaxMin(activeVMs, mostRelevantResource)
+      selectVMForMigrationByMaxMin(activeVMs, mostRelevantResource)
     }
   }
 }
