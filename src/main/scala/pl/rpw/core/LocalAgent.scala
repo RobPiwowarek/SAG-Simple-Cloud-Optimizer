@@ -176,6 +176,7 @@ class LocalAgent extends Actor{
       usageHistory.push(value)
       this.n_predictions += 1
     }
+
     if (resourceType == "cpu"){
       this.usageHistoryCPU = usageHistory
     } else if (resourceType == "gpu"){
@@ -183,8 +184,8 @@ class LocalAgent extends Actor{
     } else if (resourceType == "disk"){
       this.usageHistoryDisk = usageHistory
     }
-    writeHistoryToFile(filePath, usageHistory, false)
 
+    writeHistoryToFile(filePath, usageHistory, false)
   }
 
   /**
@@ -300,6 +301,4 @@ object LocalAgent {
   // if it is set to the value greater than zero the result will be greater than the one returned by the model
   // if it is smaller than 1 the result will be smaller than the one returned by the model
   case class GetNewVM(conservativenessRate: Double)
-
-  final case class GenerateTask()
 }

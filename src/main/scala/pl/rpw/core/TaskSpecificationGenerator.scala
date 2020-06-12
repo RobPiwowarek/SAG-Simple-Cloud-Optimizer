@@ -1,12 +1,16 @@
 package pl.rpw.core
 
 import akka.actor.ActorRef
+import pl.rpw.core.local.message.TaskGenerationRequestMessage
 
 import scala.concurrent.duration.Duration
 
 class TaskSpecificationGenerator(generationPeriod: Duration,
-                                 localAgent: ) extends Runnable {
+                                 localUtilityActor: ActorRef) extends Runnable {
   override def run(): Unit = {
-    agent !
+    while(true) {
+      this.wait(generationPeriod.toMillis)
+      localUtilityActor ! TaskGenerationRequestMessage()
+    }
   }
 }
