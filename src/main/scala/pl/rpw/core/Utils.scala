@@ -1,9 +1,15 @@
 package pl.rpw.core
 
+import java.util.concurrent.TimeUnit
+
+import akka.actor.ActorSystem
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.persistance.hypervisor.Hypervisor
 import pl.rpw.core.persistance.vm.VM
 import pl.rpw.core.vm.message.TaskSpecification
+
+import scala.concurrent.Await
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 object Utils {
   def getVmOrderingFunctionForMigration(resource: ResourceType.Value): (VM, VM) => Boolean = {
@@ -106,5 +112,9 @@ object Utils {
 
   private def compareFreeDisk(hypervisor1: Hypervisor, hypervisor2: Hypervisor): Boolean = {
     hypervisor1.freeDisk <= hypervisor2.freeDisk
+  }
+
+  def globalUtility(actorSystem: ActorSystem) = {
+    Await.result(actorSystem.actorSelection("user/GUA").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
   }
 }
