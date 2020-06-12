@@ -3,12 +3,13 @@ package pl.rpw.core.global
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorRef, Props}
+import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.global.message._
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 import pl.rpw.core.vm.VirtualMachineActor
-import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage}
+import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage, TaskSpecification}
 import pl.rpw.core.{Consts, Utils}
 
 import scala.collection.mutable
@@ -17,10 +18,11 @@ import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.util.Random
 
 class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.empty)
-  extends Actor {
+  extends Actor with LazyLogging {
   private val actorSystem = context.system
   private val VMs = mutable.HashMap[String, ActorRef]() // change to paths?
   private val hypervisors = mutable.HashMap[String, ActorRef]()
+  private val taskQueues = mutable.HashMap[String, mutable.Queue[TaskSpecification]]()
 
   initHypervisors()
   initVirtualMachines()
@@ -38,9 +40,19 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
 
     case TaskRequestMessage(specification) =>
       println(specification + " requested")
+
+      if (!taskQueues.keys.exists(_.equals(specification.userId))) {
+        taskQueues.put(specification.userId, mutable.Queue.empty)
+      }
+
+      // enqueue task if no vm can handle it
       val vm = VMSelector.selectVM(specification.userId, specification)
-      val vmRef = VMs.get(vm.id).orNull //fixme: same here
-      vmRef ! TaskMessage(specification)
+      val vmRef = VMs.get(vm.id).orNull
+      if (vmRef == null) {
+        taskQueues(specification.userId).enqueue(specification)
+      } else {
+        vmRef ! TaskMessage(specification)
+      }
 
     case OverprovisioningMessage(hypervisor) =>
       println("Overprovisioning from: " + hypervisor)
@@ -51,8 +63,27 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       migrateAllMachinesIfPossible(HypervisorRepository.findById(hypervisor))
 
     case TaskFinishedMessage(taskId, userId) =>
-      val ref = Await.result(actorSystem.actorSelection(userId).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
-      ref ! TaskFinishedMessage(taskId, userId)
+      try {
+        val ref = Await.result(actorSystem.actorSelection(userId).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+        if (!taskQueues.keys.exists(_.equals(userId))) {
+          taskQueues.put(userId, mutable.Queue.empty)
+        }
+
+        // todo: pytanie czy to wyciaga taski z kolejki???
+        for (task <- taskQueues(userId)) {
+          val vm = VMSelector.selectVM(userId, task)
+          val vmRef = VMs.get(vm.id).orNull
+          if (vmRef != null) {
+            vmRef ! TaskMessage(task)
+            // fixme: i hope it works
+            taskQueues.update(userId, taskQueues(userId).filterNot(_.equals(task)))
+          }
+        }
+
+        ref ! TaskFinishedMessage(taskId, userId)
+      } catch {
+        case exception => logger.error(s"Exception occured when awaiting for resolving of actor $userId and task $taskId in GUA: ${exception.getMessage}")
+      }
   }
 
   private def createVM(userId: String,
