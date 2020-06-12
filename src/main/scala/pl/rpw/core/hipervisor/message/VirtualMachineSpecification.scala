@@ -11,8 +11,5 @@ class VirtualMachineSpecification(val cpu: Int,
   }
 
   override def toString: String =
-    s"""
-       |VirtualMachineSpecification
-       |cpu = $cpu ram = $ram disk = $disk
-       |""".stripMargin
+    s"""VirtualMachineSpecification cpu = $cpu ram = $ram disk = $disk""".stripMargin
 }

@@ -57,10 +57,6 @@ final case class Hypervisor(id: String,
   }
 
   override def toString: String =
-    s"""
-       |Hypervisor id = $id
-       |cpu = $cpu ram = $ram disk = $disk
-       |freeCpu = $freeCpu freeRam = $freeRam freeDisk = $freeDisk
-       |""".stripMargin
-
+    s"""Hypervisor id = $id state = $state cpu = $cpu ram = $ram disk = $disk freeCpu = $freeCpu freeRam = $freeRam freeDisk = $freeDisk """
+      .stripMargin
 }

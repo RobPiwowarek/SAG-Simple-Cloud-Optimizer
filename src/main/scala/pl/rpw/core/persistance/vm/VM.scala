@@ -20,15 +20,7 @@ final case class VM(id: String,
   def toSpecs = new VirtualMachineSpecification(this)
 
   override def toString: String = {
-    "VM(id:" + id +
-      ", state: " + state +
-      ", cpu: " + cpu +
-      ", ram: " + ram +
-      ", disk: " + disk +
-      ", user: " + user +
-      ", hypervisor: " + hypervisor +
-      ", freeCpu: " + freeCpu +
-      ", freeRam: " + freeRam +
-      ", freeDisk: " + freeDisk + ")"
+    s"""VM id = $id state = $state cpu = $cpu ram = $ram disk = $disk user = $user hypervisor $hypervisor freeCpu = $freeCpu freeRam = $freeRam freeDisk = $freeDisk """
+      .stripMargin
   }
 }
