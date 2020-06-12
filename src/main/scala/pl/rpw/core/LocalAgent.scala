@@ -98,7 +98,6 @@ class LocalAgent extends Actor{
       println("Adding new VM.")
       sender ! result
 
-
     case "ShutDown" =>
       context.system.terminate()
 
@@ -106,7 +105,7 @@ class LocalAgent extends Actor{
       println("Starting new agent")
       //loading history of data usage and training model
       var model = this.prepareNewModel(historyFilePath)
-      var x : Int = 1;
+      var x : Int = 1
       var value : Double= 0.0d
       var predictedVal: Double = 0.0d
       val usageHistory = mutable.Stack(0.0d)
@@ -153,7 +152,8 @@ class LocalAgent extends Actor{
   if append is set to true, the values are appended
   if it is set to false the values are overeaten
   */
-  private[this] def writeHistoryToFile(filePath: String, history: mutable.Stack[Double], append: Boolean){
+  private[this] def writeHistoryToFile(filePath: String,
+                                       history: mutable.Stack[Double], append: Boolean){
     val writer = new FileWriter(new File(filePath), append)
     for(item <- history ){
       writer.write(LocalDateTime.now().toString()+";"+item.toString()+'\n')
@@ -164,7 +164,10 @@ class LocalAgent extends Actor{
   Creating usage history and writing it to the file.
   The sin shape is based of the parameter
   */
-  private[this] def createUsageHistory(resourceType: String, filePath: String, amplitude:Double, fileLength: Int): Unit ={
+  private[this] def createUsageHistory(resourceType: String,
+                                       filePath: String,
+                                       amplitude:Double,
+                                       fileLength: Int): Unit ={
     var value: Double = 0.0d
     val usageHistory = mutable.Stack(0.0d)
 
@@ -187,7 +190,8 @@ class LocalAgent extends Actor{
   /**
   use the model to predict value in t+1, basing on values from range t-n+1 : t
    */
-  private[this] def predict(model: GBTRegressionModel, historyList: mutable.Stack[Double]):Double = {
+  private[this] def predict(model: GBTRegressionModel,
+                            historyList: mutable.Stack[Double]):Double = {
     //the model can be used only if the history is longer than the look back of the model
     //if it is shorter we return the previous value
     if(historyList.size < 12){
@@ -219,7 +223,7 @@ class LocalAgent extends Actor{
     for( i <- 0 to valuesList.size - step - 1){
       val t = new ListBuffer[Float]()
       for (j <- 1 to step){
-        //Gather past records up to the step period
+        //Gather past records up to the step generationPeriod
         t.append(valuesList((i+j-1).toInt).toFloat)
       }
       output_X.append(t)
@@ -296,4 +300,6 @@ object LocalAgent {
   // if it is set to the value greater than zero the result will be greater than the one returned by the model
   // if it is smaller than 1 the result will be smaller than the one returned by the model
   case class GetNewVM(conservativenessRate: Double)
+
+  final case class GenerateTask()
 }
