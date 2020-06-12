@@ -26,8 +26,9 @@ lazy val commonSettings = Seq(
 
 lazy val dependencies = Seq(
   libraryDependencies ++= {
-    val akkaV                   = "2.5.31"
+    val akkaV                   = "2.6.4"
     val scalaTestV              = "3.1.1"
+    val sparkV                  = "2.2.0"
     val slickV                  = "3.3.2"
     val slf4jV                  = "1.6.4"
     val h2V                     = "1.4.200"
@@ -53,6 +54,11 @@ lazy val dependencies = Seq(
       "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
       "com.ticketfly"                  %% "play-liquibase"                             % playLiquibaseV
     )
+      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
+      "org.apache.spark"                % "spark-core_2.11"                            % sparkV,
+      "org.apache.spark"                % "spark-sql_2.11"                             % sparkV,
+      "org.apache.spark"                % "spark-mllib_2.11"                           % sparkV
+)
   }
 )
 
