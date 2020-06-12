@@ -1,7 +1,6 @@
 package pl.rpw.core.persistance.vm
 
 import pl.rpw.core.DBInitializer
-import pl.rpw.core.persistance.hypervisor.Hypervisor
 import slick.jdbc.H2Profile.api._
 import slick.lifted.TableQuery
 
@@ -27,15 +26,25 @@ object VMRepository {
     Await.result(db.run(tableQuery.result), Duration.Inf)
   }
 
-  def findActiveByUserAndEnoughFreeResources(userId: String, requiredCpu: Int, requiredRam: Int, requiredDisk: Int): Seq[VM] = {
+  def findActiveByUserAndEnoughFreeResources(userId: String,
+                                             requiredCpu: Int,
+                                             requiredRam: Int,
+                                             requiredDisk: Int): Seq[VM] = {
     findByUserAndStateAndEnoughResources(userId, VMState.ACTIVE, requiredCpu, requiredRam, requiredDisk)
   }
 
-  def findIdleByUserAndEnoughFreeResources(userId: String, requiredCpu: Int, requiredRam: Int, requiredDisk: Int): Seq[VM] = {
+  def findIdleByUserAndEnoughFreeResources(userId: String,
+                                           requiredCpu: Int,
+                                           requiredRam: Int,
+                                           requiredDisk: Int): Seq[VM] = {
     findByUserAndStateAndEnoughResources(userId, VMState.IDLE, requiredCpu, requiredRam, requiredDisk)
   }
 
-  def findByUserAndStateAndEnoughResources(userId: String, state: VMState.Value, requiredCpu: Int, requiredRam: Int, requiredDisk: Int): Seq[VM] = {
+  def findByUserAndStateAndEnoughResources(userId: String,
+                                           state: VMState.Value,
+                                           requiredCpu: Int,
+                                           requiredRam: Int,
+                                           requiredDisk: Int): Seq[VM] = {
     val query = tableQuery
       .filter(_.user === userId)
       .filter(_.freeCpu >= requiredCpu)
@@ -43,7 +52,6 @@ object VMRepository {
       .filter(_.freeDisk >= requiredDisk)
       .filter(_.state === state.toString)
     Await.result(db.run(query.result), Duration.Inf)
-
   }
 
   def findActiveByHypervisor(hypervisor: String): Seq[VM] = {
@@ -56,7 +64,7 @@ object VMRepository {
   def findIdleByHypervisor(hypervisor: String): Seq[VM] = {
     val query = tableQuery
       .filter(_.hypervisor === hypervisor)
-      .filter(_.state ===VMState.IDLE.toString)
+      .filter(_.state === VMState.IDLE.toString)
     Await.result(db.run(query.result), Duration.Inf)
   }
 

@@ -2,8 +2,7 @@ package pl.rpw.core.hipervisor
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{Actor, ActorRef}
-import pl.rpw.core.Consts
+import akka.actor.Actor
 import pl.rpw.core.global.message.{OverprovisioningMessage, UnderprovisioningMessage}
 import pl.rpw.core.hipervisor.message._
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
@@ -23,7 +22,7 @@ class HypervisorActor(val availableCpu: Int,
       print("Hypervisor " + id + " ")
       println("Received attach: " + vmId)
       val vm = VMRepository.findById(vmId)
-      if (vm.hasActivelyUsedResources()) {
+      if (vm.hasActivelyUsedResources) {
         vm.state = VMState.ACTIVE.toString
       } else {
         vm.state = VMState.IDLE.toString
@@ -93,5 +92,5 @@ class HypervisorActor(val availableCpu: Int,
     HypervisorRepository.update(hypervisor)
     checkUnderprovisioningAndNotifyGlobalAgent(hypervisor)
   }
-  
+
 }

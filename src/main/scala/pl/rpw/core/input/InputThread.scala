@@ -12,14 +12,15 @@ import pl.rpw.core.vm.VirtualMachineActor
 import pl.rpw.core.vm.message.TaskSpecification
 
 import scala.collection.mutable
-import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 import scala.io.StdIn
 import scala.util.{Failure, Success}
 
-class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef]) extends Thread {
+class InputThread(actorSystem: ActorSystem,
+                  actors: mutable.Map[String, ActorRef]) extends Thread {
 
-  def createVM(id:String, data: String): ActorRef = {
+  def createVM(id: String,
+               data: String): ActorRef = {
     val specification = data.split("/")
     actorSystem.actorOf(Props(
       new VirtualMachineActor(
@@ -30,7 +31,9 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
       )))
   }
 
-  def createActor(actorType: String, id: String, data: String): ActorRef = {
+  def createActor(actorType: String,
+                  id: String,
+                  data: String): ActorRef = {
     val ref = actorType match {
       case "VM" | "vm" => createVM(id, data)
     }
@@ -62,7 +65,7 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
   def requestVM(specification: Array[String]): Unit = {
     implicit val timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
     implicit val ec = scala.concurrent.ExecutionContext.global
-    actorSystem.actorSelection("user/GUA").resolveOne().onComplete{
+    actorSystem.actorSelection("user/GUA").resolveOne().onComplete {
       case Success(ref) => {
         val vmSpecification = new VirtualMachineSpecification(
           Integer.parseInt(specification(0)),
@@ -87,7 +90,7 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
     val specification = data.split("/")
     implicit val timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
     implicit val ec = scala.concurrent.ExecutionContext.global
-    actorSystem.actorSelection("user/GUA").resolveOne().onComplete{
+    actorSystem.actorSelection("user/GUA").resolveOne().onComplete {
       case Success(ref) => {
         val taskSpecification: TaskSpecification = new TaskSpecification(
           specification(0),
@@ -98,7 +101,7 @@ class InputThread(actorSystem: ActorSystem, actors: mutable.Map[String, ActorRef
           Integer.parseInt(specification(5)))
         ref ! TaskRequestMessage(taskSpecification)
       }
-      case Failure(exception) => println("Cannot find GUA")
+      case Failure(exception) => println(s"Cannot find GUA: ${exception.getMessage}")
     }
   }
 

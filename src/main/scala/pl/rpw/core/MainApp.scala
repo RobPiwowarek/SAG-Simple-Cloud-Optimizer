@@ -9,7 +9,6 @@ import pl.rpw.core.persistance.vm.VMRepository
 
 import scala.collection.mutable
 
-
 object MainApp extends App {
   VMRepository.setup()
   HypervisorRepository.setup()
@@ -31,14 +30,6 @@ object MainApp extends App {
     Props(new GlobalUtilityActor(actors)), "GUA")
 
   globalUtilityActor ! "hi"
-
-  // default Actor constructor
-  val helloActor = system.actorOf(Props[HelloActor], name = "helloactor")
-  helloActor ! "hello"
-  helloActor ! "buenos dias"
-  helloActor ! "I never loved you"
-  helloActor ! "me liek cookiez"
-
 
   val inputThread = new InputThread(system, actors)
   inputThread.run()

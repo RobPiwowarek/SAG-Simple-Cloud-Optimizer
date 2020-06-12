@@ -2,8 +2,7 @@ package pl.rpw.core.vm
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{Actor, ActorRef, ActorSystem}
-import pl.rpw.core.ResourceType
+import akka.actor.{Actor, ActorSystem}
 import pl.rpw.core.global.message.TaskFinishedMessage
 import pl.rpw.core.hipervisor.message._
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
@@ -68,7 +67,7 @@ class VirtualMachineActor(val id: String,
     vm.freeCpu += cpu
     vm.freeRam += ram
     vm.freeDisk += disk
-    if (!vm.hasActivelyUsedResources()) {
+    if (!vm.hasActivelyUsedResources) {
       vm.state = VMState.IDLE.toString
     }
     VMRepository.update(vm)

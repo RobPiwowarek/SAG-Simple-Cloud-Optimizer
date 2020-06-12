@@ -12,6 +12,6 @@ class TaskSpecification(val taskId: String,
       ", tima: " + time +
       ", cpu: " + cpu +
       ", ram: " + ram +
-      ", disk: " + disk +")"
+      ", disk: " + disk + ")"
   }
 }

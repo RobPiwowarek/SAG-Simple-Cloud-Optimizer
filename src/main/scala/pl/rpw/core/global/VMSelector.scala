@@ -1,21 +1,17 @@
 package pl.rpw.core.global
 
-import pl.rpw.core.ResourceType
 import pl.rpw.core.persistance.hypervisor.Hypervisor
 import pl.rpw.core.persistance.vm.{VM, VMRepository}
 import pl.rpw.core.vm.message.TaskSpecification
+import pl.rpw.core.{ResourceType, Utils}
 
 object VMSelector {
   def selectMostRelevantResource(specification: TaskSpecification): ResourceType.Value = {
     val allVMs = VMRepository.findAll()
 
-    val availableCpu = allVMs.map(_.freeCpu).reduce(Integer.sum)
-    val availableRam = allVMs.map(_.freeRam).reduce(Integer.sum)
-    val availableDisk = allVMs.map(_.freeDisk).reduce(Integer.sum)
-
-    val cpuImportance = specification.cpu / availableCpu
-    val ramImportance = specification.ram / availableRam
-    val diskImportance = specification.disk / availableDisk
+    val cpuImportance = Utils.calculateCpuImportance(specification, allVMs)
+    val ramImportance = Utils.calculateRamImportance(specification, allVMs)
+    val diskImportance = Utils.calculateDiskImportance(specification, allVMs)
 
     if (cpuImportance >= ramImportance && cpuImportance >= diskImportance) {
       ResourceType.CPU
@@ -26,52 +22,16 @@ object VMSelector {
     }
   }
 
-  def compareFreeCpu(vm1: VM, vm2: VM): Boolean = {
-    vm1.freeCpu <= vm2.freeCpu
-  }
-
-  def compareFreeRam(vm1: VM, vm2: VM): Boolean = {
-    vm1.freeRam <= vm2.freeRam
-  }
-
-  def compareFreeDisk(vm1: VM, vm2: VM): Boolean = {
-    vm1.freeDisk <= vm2.freeDisk
-  }
-
-  def compareCpu(vm1: VM, vm2: VM): Boolean = {
-    vm1.cpu <= vm2.cpu
-  }
-
-  def compareRam(vm1: VM, vm2: VM): Boolean = {
-    vm1.ram <= vm2.ram
-  }
-
-  def compareDisk(vm1: VM, vm2: VM): Boolean = {
-    vm1.disk <= vm2.disk
-  }
-
   def selectVMforTaskByMaxMin(selectedVMs: Seq[VM],
                               specification: TaskSpecification): VM = {
     val resource = selectMostRelevantResource(specification)
-    val orderFunction = if (resource == ResourceType.CPU) {
-      (vm1: VM, vm2: VM) => compareFreeCpu(vm1, vm2)
-    } else if (resource == ResourceType.RAM) {
-      (vm1: VM, vm2: VM) => compareFreeRam(vm1, vm2)
-    } else {
-      (vm1: VM, vm2: VM) => compareFreeDisk(vm1, vm2)
-    }
+    val orderFunction = Utils.getVmOrderingFunctionForTask(resource)
     selectedVMs.sortWith(orderFunction).head
   }
 
   def selectVMForMigrationByMaxMin(selectedVMs: Seq[VM],
                                    resource: ResourceType.Value): VM = {
-    val orderFunction = if (resource == ResourceType.CPU) {
-      (vm1: VM, vm2: VM) => compareCpu(vm1, vm2)
-    } else if (resource == ResourceType.RAM) {
-      (vm1: VM, vm2: VM) => compareRam(vm1, vm2)
-    } else {
-      (vm1: VM, vm2: VM) => compareDisk(vm1, vm2)
-    }
+    val orderFunction = Utils.getVmOrderingFunctionForMigration(resource)
     selectedVMs.sortWith(orderFunction).head
   }
 

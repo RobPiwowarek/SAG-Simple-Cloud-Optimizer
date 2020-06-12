@@ -26,33 +26,50 @@ object HypervisorRepository {
     Await.result(db.run(tableQuery.result), Duration.Inf)
   }
 
-  def findActiveWithEnoughFreeResourcesAndIdNot(requiredCpu: Int, requiredRam: Int, requiredDisk: Int, exludedId: String): Seq[Hypervisor] = {
-    findByStateAndEnoughResourcesAndIdNot(HypervisorState.ACTIVE, requiredCpu, requiredRam, requiredDisk, exludedId)
+  def findActiveWithEnoughFreeResourcesAndIdNot(requiredCpu: Int,
+                                                requiredRam: Int,
+                                                requiredDisk: Int,
+                                                excludedId: String): Seq[Hypervisor] = {
+    findByStateAndEnoughResourcesAndIdNot(HypervisorState.ACTIVE, requiredCpu, requiredRam, requiredDisk, excludedId)
   }
 
-  def findIdleWithEnoughFreeResourcesAndIdNot(requiredCpu: Int, requiredRam: Int, requiredDisk: Int, exludedId: String): Seq[Hypervisor] = {
-    findByStateAndEnoughResourcesAndIdNot(HypervisorState.IDLE, requiredCpu, requiredRam, requiredDisk, exludedId)
+  def findIdleWithEnoughFreeResourcesAndIdNot(requiredCpu: Int,
+                                              requiredRam: Int,
+                                              requiredDisk: Int,
+                                              excludedId: String): Seq[Hypervisor] = {
+    findByStateAndEnoughResourcesAndIdNot(HypervisorState.IDLE, requiredCpu, requiredRam, requiredDisk, excludedId)
   }
 
-  def findByStateAndEnoughResourcesAndIdNot(state: HypervisorState.Value, requiredCpu: Int, requiredRam: Int, requiredDisk: Int, exludedId: String): Seq[Hypervisor] = {
+  def findByStateAndEnoughResourcesAndIdNot(state: HypervisorState.Value,
+                                            requiredCpu: Int,
+                                            requiredRam: Int,
+                                            requiredDisk: Int,
+                                            excludedId: String): Seq[Hypervisor] = {
     val query = tableQuery
       .filter(_.freeCpu >= requiredCpu)
       .filter(_.freeRam >= requiredRam)
       .filter(_.freeDisk >= requiredDisk)
       .filter(_.state === state.toString())
-      .filter(_.id =!= exludedId)
+      .filter(_.id =!= excludedId)
     Await.result(db.run(query.result), Duration.Inf)
   }
 
-  def findActiveWithEnoughFreeResources(requiredCpu: Int, requiredRam: Int, requiredDisk: Int): Seq[Hypervisor] = {
+  def findActiveWithEnoughFreeResources(requiredCpu: Int,
+                                        requiredRam: Int,
+                                        requiredDisk: Int): Seq[Hypervisor] = {
     findByStateAndEnoughResources(HypervisorState.ACTIVE, requiredCpu, requiredRam, requiredDisk)
   }
 
-  def findIdleWithEnoughFreeResources(requiredCpu: Int, requiredRam: Int, requiredDisk: Int): Seq[Hypervisor] = {
+  def findIdleWithEnoughFreeResources(requiredCpu: Int,
+                                      requiredRam: Int,
+                                      requiredDisk: Int): Seq[Hypervisor] = {
     findByStateAndEnoughResources(HypervisorState.IDLE, requiredCpu, requiredRam, requiredDisk)
   }
 
-  def findByStateAndEnoughResources(state: HypervisorState.Value, requiredCpu: Int, requiredRam: Int, requiredDisk: Int): Seq[Hypervisor] = {
+  def findByStateAndEnoughResources(state: HypervisorState.Value,
+                                    requiredCpu: Int,
+                                    requiredRam: Int,
+                                    requiredDisk: Int): Seq[Hypervisor] = {
     val query = tableQuery
       .filter(_.freeCpu >= requiredCpu)
       .filter(_.freeRam >= requiredRam)

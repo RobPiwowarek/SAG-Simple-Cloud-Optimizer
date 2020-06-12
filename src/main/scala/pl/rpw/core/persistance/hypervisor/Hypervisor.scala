@@ -3,14 +3,14 @@ package pl.rpw.core.persistance.hypervisor
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.{Consts, ResourceType}
 
-case class Hypervisor(id: String,
-                      var state: String,
-                      cpu: Int,
-                      ram: Int,
-                      disk: Int,
-                      var freeCpu: Int,
-                      var freeRam: Int,
-                      var freeDisk: Int) {
+final case class Hypervisor(id: String,
+                            var state: String,
+                            cpu: Int,
+                            ram: Int,
+                            disk: Int,
+                            var freeCpu: Int,
+                            var freeRam: Int,
+                            var freeDisk: Int) {
 
   def selectMostExploitedResource(): ResourceType.Value = {
     val cpuExploitation = (this.cpu - this.freeCpu) / this.cpu
@@ -56,14 +56,11 @@ case class Hypervisor(id: String,
     this.freeCpu != this.cpu || this.freeRam != this.ram || this.freeDisk != this.disk
   }
 
-  override def toString: String = {
-    "Hypervisor(id:" + id +
-      ", state: " + state +
-      ", cpu: " + cpu +
-      ", ram: " + ram +
-      ", disk: " + disk +
-      ", freeCpu: " + freeCpu +
-      ", freeRam: " + freeRam +
-      ", freeDisk: " + freeDisk + ")"
-  }
+  override def toString: String =
+    s"""
+       |Hypervisor id = $id
+       |cpu = $cpu ram = $ram disk = $disk
+       |freeCpu = $freeCpu freeRam = $freeRam freeDisk = $freeDisk
+       |""".stripMargin
+
 }

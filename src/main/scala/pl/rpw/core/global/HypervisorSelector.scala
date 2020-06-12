@@ -1,11 +1,13 @@
 package pl.rpw.core.global
 
-import pl.rpw.core.ResourceType
+import com.typesafe.scalalogging.LazyLogging
+import pl.rpw.core.Utils.{calculateCpuImportance, calculateDiskImportance, calculateRamImportance}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
+import pl.rpw.core.{Consts, ResourceType, Utils}
 
-object HypervisorSelector {
-  def selectMostExploitedResource(allHypervisors: Seq[Hypervisor]) : ResourceType.Value = {
+object HypervisorSelector extends LazyLogging {
+  def selectMostExploitedResource(allHypervisors: Seq[Hypervisor]): ResourceType.Value = {
     val availableCpu = allHypervisors.map(_.freeCpu).reduce(Integer.sum)
     val availableRam = allHypervisors.map(_.freeRam).reduce(Integer.sum)
     val availableDisk = allHypervisors.map(_.freeDisk).reduce(Integer.sum)
@@ -27,14 +29,11 @@ object HypervisorSelector {
     }
   }
 
-  def selectMostRelevantResource(specification: VirtualMachineSpecification, allHypervisors: Seq[Hypervisor]) : ResourceType.Value = {
-    val availableCpu = allHypervisors.map(_.freeCpu).reduce(Integer.sum)
-    val availableRam = allHypervisors.map(_.freeRam).reduce(Integer.sum)
-    val availableDisk = allHypervisors.map(_.freeDisk).reduce(Integer.sum)
-
-    val cpuImportance = specification.cpu / availableCpu
-    val ramImportance = specification.ram / availableRam
-    val diskImportance = specification.disk / availableDisk
+  def selectMostRelevantResource(specification: VirtualMachineSpecification,
+                                 allHypervisors: Seq[Hypervisor]): ResourceType.Value = {
+    val cpuImportance = calculateCpuImportance(specification, allHypervisors)
+    val ramImportance = calculateRamImportance(specification, allHypervisors)
+    val diskImportance = calculateDiskImportance(specification, allHypervisors)
 
     if (cpuImportance >= ramImportance && cpuImportance >= diskImportance) {
       ResourceType.CPU
@@ -45,33 +44,11 @@ object HypervisorSelector {
     }
   }
 
-  def compareFreeCpu(hypervisor1: Hypervisor, hypervisor2: Hypervisor) : Boolean = {
-    hypervisor1.freeCpu <= hypervisor2.freeCpu
-  }
-
-  def compareFreeRam(hypervisor1: Hypervisor, hypervisor2: Hypervisor) : Boolean = {
-    hypervisor1.freeRam <= hypervisor2.freeRam
-  }
-
-  def compareFreeDisk(hypervisor1: Hypervisor, hypervisor2: Hypervisor) : Boolean = {
-    hypervisor1.freeDisk <= hypervisor2.freeDisk
-  }
-
-  def getOrderFunction(resource: ResourceType.Value): Function2[Hypervisor, Hypervisor, Boolean] = {
-    if (resource == ResourceType.CPU) {
-      (hypervisor1: Hypervisor, hypervisor2: Hypervisor) => compareFreeCpu(hypervisor1, hypervisor2)
-    } else if (resource == ResourceType.RAM) {
-      (hypervisor1: Hypervisor, hypervisor2: Hypervisor) => compareFreeRam(hypervisor1, hypervisor2)
-    } else {
-      (hypervisor1: Hypervisor, hypervisor2: Hypervisor) => compareFreeDisk(hypervisor1, hypervisor2)
-    }
-  }
-
   def selectHypervisorByMaxMin(selectedHypervisors: Seq[Hypervisor],
                                specification: VirtualMachineSpecification): Hypervisor = {
     val allHypervisors = HypervisorRepository.findAll()
     val resource = selectMostRelevantResource(specification, allHypervisors)
-    val orderFunction = getOrderFunction(resource)
+    val orderFunction = Utils.getHypervisorOrderingFunction(resource)
     selectedHypervisors.sortWith(orderFunction).head
   }
 
@@ -87,6 +64,7 @@ object HypervisorSelector {
       if (idleHypervisors.nonEmpty) {
         selectHypervisorByMaxMin(idleHypervisors, specification)
       } else {
+        logger.info("Could not find hypervisor for the following specification: " + specification.toString)
         null
       }
     } else {
@@ -94,7 +72,8 @@ object HypervisorSelector {
     }
   }
 
-  def selectDestinationHypervisorForMigration(specification: VirtualMachineSpecification, sourceHypervisor: Hypervisor): Hypervisor = {
+  def selectDestinationHypervisorForMigration(specification: VirtualMachineSpecification,
+                                              sourceHypervisor: Hypervisor): Hypervisor = {
     // using MaxMin strategy choose resource that is most relevant for the vm,
     // then choose hipervisor (physical machine) that has the least of it amongst those
     // which can run the vm and not be overloaded
@@ -106,7 +85,7 @@ object HypervisorSelector {
       if (idleHypervisors.nonEmpty) {
         selectHypervisorByMaxMin(idleHypervisors, specification)
       } else {
-        null
+        Consts.EmptyHypervisor
       }
     } else {
       selectHypervisorByMaxMin(activeHypervisors, specification)
@@ -119,12 +98,14 @@ object HypervisorSelector {
     // using MaxMin strategy choose resource that is most relevant for the vm,
     // then choose hipervisor (physical machine) that has the least of it amongst those
     // which can run the vm and not be overloaded
-    val candidates = hypervisors
+    hypervisors
       .filter(_.hasEnoughResources(specification))
-      .sortWith(getOrderFunction(mostExploitedResource))
+      .sortWith(Utils.getHypervisorOrderingFunction(mostExploitedResource))
       .reverse
-
-    candidates.headOption.orNull
+      .headOption match {
+      case Some(candidate) => candidate
+      case None => Consts.EmptyHypervisor
+    }
   }
 
 }
