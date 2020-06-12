@@ -28,17 +28,17 @@ lazy val dependencies = Seq(
   libraryDependencies ++= {
     val akkaV                   = "2.6.4"
     val scalaTestV              = "3.1.1"
+    val sparkV                  = "2.4.0"
+    val sparkCoreV              = "2.4.5"
 
     Seq(
       "com.typesafe.akka"              %% "akka-actor"                                 % akkaV,
 
       "com.typesafe.akka"              %% "akka-testkit"                               % akkaV                     % Test,
       "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
-      "org.apache.spark" %% "spark-mllib" % "2.4.0",
-      "org.apache.spark" %% "spark-core" % "2.4.5",
-      "org.apache.spark" %% "spark-sql" % "2.4.5"
-
-
+      "org.apache.spark"               %% "spark-mllib"                                % sparkV,
+      "org.apache.spark"               %% "spark-core"                                 % sparkCoreV,
+      "org.apache.spark"               %% "spark-sql"                                  % sparkCoreV
     )
   }
 )

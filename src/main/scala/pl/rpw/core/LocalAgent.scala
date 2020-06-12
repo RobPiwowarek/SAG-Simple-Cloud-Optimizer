@@ -9,10 +9,10 @@ import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.regression.{GBTRegressionModel, GBTRegressor}
 import org.apache.spark.sql.{SQLContext, SparkSession}
 import org.apache.spark.{SparkContext, sql}
+import pl.rpw.core.LocalAgent.{GetNewVM, StartAgent}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-
 
 class LocalAgent extends Actor{
 
@@ -287,6 +287,13 @@ class LocalAgent extends Actor{
     println(s"Model created. RMSE = $rmse")
     model
   }
+}
 
+object LocalAgent {
+  case class StartAgent(cpu: Int, gpu: Int, disk: Int)
 
+  // conservativenessRate is a value which says how conservative the prediction should be
+  // if it is set to the value greater than zero the result will be greater than the one returned by the model
+  // if it is smaller than 1 the result will be smaller than the one returned by the model
+  case class GetNewVM(conservativenessRate: Double)
 }
