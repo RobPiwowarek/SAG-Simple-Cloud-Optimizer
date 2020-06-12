@@ -19,7 +19,7 @@ import scala.util.Random
 class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.empty)
   extends Actor {
   private val actorSystem = context.system
-  private val VMs = mutable.HashMap[String, ActorRef]()
+  private val VMs = mutable.HashMap[String, ActorRef]() // change to paths?
   private val hypervisors = mutable.HashMap[String, ActorRef]()
 
   initHypervisors()
@@ -28,7 +28,10 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
   override def receive: Receive = {
     case VirtualMachineRequestMassage(userId, specification) =>
       println(specification + " requested from " + userId)
-      val hypervisor = HypervisorSelector.selectHypervisor(specification) // fixme: this can be null so it can fail or hypervisor.id
+      val hypervisor = HypervisorSelector.selectHypervisor(specification)
+      if (hypervisor == null) {
+        // queue? send back a message?
+      }
       val vm = createVM(userId, specification, hypervisor)
       val hypervisorRef = hypervisors.get(hypervisor.id).orNull // fixme: Paula, czy to moze byc faktycznie nullem?, jesli tak to jak handlujemy taka sytuacje
       hypervisorRef ! AttachVMMessage(vm.id)
@@ -47,8 +50,9 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       println("Underprovisioning from: " + hypervisor)
       migrateAllMachinesIfPossible(HypervisorRepository.findById(hypervisor))
 
-    case TaskFinishedMessage(_) =>
-    //todo: respond to local agent about task execution
+    case TaskFinishedMessage(taskId, userId) =>
+      val ref = Await.result(actorSystem.actorSelection(userId).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+      ref ! TaskFinishedMessage(taskId, userId)
   }
 
   private def createVM(userId: String,

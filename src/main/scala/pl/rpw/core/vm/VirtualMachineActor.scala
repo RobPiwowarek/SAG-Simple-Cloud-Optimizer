@@ -86,7 +86,7 @@ class VirtualMachineActor(val id: String,
 
         val actorSystem = ActorSystem()
         val localUtilityActor = actorSystem.actorSelection("user/" + specification.userId)
-        localUtilityActor ! TaskFinishedMessage(specification.taskId)
+        localUtilityActor ! TaskFinishedMessage(specification.taskId, specification.userId)
 
         tasks.remove(specification)
         if (tasks.isEmpty) {
