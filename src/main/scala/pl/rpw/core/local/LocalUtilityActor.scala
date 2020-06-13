@@ -1,5 +1,7 @@
 package pl.rpw.core.local
 
+import java.nio.file.{Files, Paths}
+import java.time.LocalDateTime
 import java.util.UUID
 
 import akka.actor.Actor
@@ -7,7 +9,7 @@ import org.apache.spark.ml.regression.GBTRegressionModel
 import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{TaskFinishedMessage, TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
-import pl.rpw.core.local.message.{CreateVMMessage, TaskGenerationRequestMessage, VMCreated}
+import pl.rpw.core.local.message.{CreateVMMessage, TaskCreationFailed, TaskGenerationRequestMessage, VMCreated}
 import pl.rpw.core.persistance.task.TaskSpecification
 
 import scala.collection.mutable
@@ -24,7 +26,7 @@ class LocalUtilityActor(val id: String,
   var tasks = new mutable.HashMap[String, TaskSpecification]()
   val vms = new mutable.HashSet[String]()
 
-  val rootFilePath = "/data"
+  val rootFilePath = "data"
   val historyFilePath = "_history.txt" //filepath for time series of usage history
 
   val historyCpuPath: String = s"""$rootFilePath/cpu_$id$historyFilePath"""
@@ -35,13 +37,15 @@ class LocalUtilityActor(val id: String,
   var currentRamUsage = 0
   var currentDiskUsage = 0
 
-  var usageHistoryCPU = mutable.Stack[Double]()
-  var usageHistoryRam = mutable.Stack[Double]()
-  var usageHistoryDisk = mutable.Stack[Double]()
+  var usageHistoryCPU = mutable.Stack[Sample]()
+  var usageHistoryRam = mutable.Stack[Sample]()
+  var usageHistoryDisk = mutable.Stack[Sample]()
 
-  LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
-  LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
-  LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
+  if (!Files.exists(Paths.get(historyFilePath))) {
+    LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
+    LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
+    LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
+  }
 
   var modelCPU: GBTRegressionModel = LocalUtilityHelper.initNewModel(historyCpuPath)
   var modelRam: GBTRegressionModel = LocalUtilityHelper.initNewModel(historyRamPath)
@@ -85,11 +89,11 @@ class LocalUtilityActor(val id: String,
   }
 
   def updateHistory(cpu: Int, ram: Int, disk: Int): Unit = {
-    usageHistoryCPU.push(cpu)
+    usageHistoryCPU.push(Sample(cpu, LocalDateTime.now()))
     LocalUtilityHelper.writeHistoryToFile(historyCpuPath, usageHistoryCPU, false)
-    usageHistoryRam.push(ram)
+    usageHistoryRam.push(Sample(ram, LocalDateTime.now()))
     LocalUtilityHelper.writeHistoryToFile(historyRamPath, usageHistoryRam, false)
-    usageHistoryDisk.push(disk)
+    usageHistoryDisk.push(Sample(disk, LocalDateTime.now()))
     LocalUtilityHelper.writeHistoryToFile(historyDiskPath, usageHistoryDisk, false)
   }
 
@@ -117,6 +121,15 @@ class LocalUtilityActor(val id: String,
         decreaseUsage(_)
         tasks.remove(taskId)
       })
+
+    case TaskCreationFailed(taskId) =>
+      println(s"""Task $taskId creation failed""")
+      val specification = tasks.get(taskId)
+      specification.map(_ => {
+        decreaseUsage(_)
+        tasks.remove(taskId)
+      })
+
 
     case VMCreated(id) =>
       println(s"""VM $id requested by local agent $id was created""")

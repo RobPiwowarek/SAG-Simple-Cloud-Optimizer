@@ -38,10 +38,11 @@ object LocalUtilityHelper extends {
    * if it is set to false the values are overeaten
    */
   def writeHistoryToFile(filePath: String,
-                                       history: mutable.Stack[Double], append: Boolean) {
+                         history: mutable.Stack[Sample],
+                         append: Boolean) {
     val writer = new FileWriter(new File(filePath), append)
     for (item <- history) {
-      writer.write(LocalDateTime.now().toString() + ";" + item.toString() + '\n')
+      writer.write(item.timestamp.toString() + ";" + item.usage.toString() + '\n')
     }
     writer.close()
   }
@@ -52,11 +53,11 @@ object LocalUtilityHelper extends {
    */
   def initUsageHistory(filePath: String, fileLength: Int): Unit = {
     var value: Double = 0.0d
-    val usageHistory = mutable.Stack(0.0d)
+    val usageHistory = mutable.Stack[Sample]()
 
     for (x <- 0 to fileLength) {
       value = 0
-      usageHistory.push(value)
+      usageHistory.push(Sample(value, LocalDateTime.now()))
     }
     writeHistoryToFile(filePath, usageHistory, false)
   }
@@ -66,14 +67,14 @@ object LocalUtilityHelper extends {
    * use the model to predict value in t+1, basing on values from range t-n+1 : t
    */
   def predict(model: GBTRegressionModel,
-              history: mutable.Stack[Double]): Double = {
+              history: mutable.Stack[Sample]): Double = {
     //the model can be used only if the history is longer than the look back of the model
     //if it is shorter we return the previous value
     if (history.size < 12) {
-      return history(0)
+      return history(0).usage
     }
 
-    val values = List.concat(ListBuffer(0.0d), history.take(trainingSetSize))
+    val values = List.concat(ListBuffer(0.0d), history.take(trainingSetSize).map(_.usage))
     import spark.implicits._
     val values_df = List(values).map(x => (x(0), x(1), x(2), x(3), x(4), x(5), x(6), x(7), x(8), x(9), x(10))).toDF()
 
