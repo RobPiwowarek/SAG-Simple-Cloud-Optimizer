@@ -4,9 +4,10 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
-import pl.rpw.core.persistance.hypervisor.Hypervisor
-import pl.rpw.core.persistance.task.TaskSpecification
-import pl.rpw.core.persistance.vm.VM
+import pl.rpw.core.local.message.VmIsDeadMessage
+import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
+import pl.rpw.core.persistance.task.{TaskSpecification, TaskSpecificationsRepository}
+import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -120,5 +121,33 @@ object Utils {
 
   def getActorRef(actorSystem: ActorSystem, path: String) = {
     Await.result(actorSystem.actorSelection(s"user/$path").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+  }
+
+  def markAllMachinesAsDeadAdNotifyOwners(hypervisor: Hypervisor, actorSystem: ActorSystem): Unit = {
+    VMRepository.findByHypervisor(hypervisor.id)
+      .foreach(vm => {
+        markMachineAsDeadAndNotifyOwner(vm, actorSystem)
+      })
+  }
+
+  def markMachineAsDeadAndNotifyOwner(vm: VM, actorSystem: ActorSystem) = {
+    vm.state = VMState.DEAD.toString
+    VMRepository.update(vm)
+    val tasks = TaskSpecificationsRepository
+      .findByVm(vm.id)
+      .map(_.taskId)
+    tasks.foreach(TaskSpecificationsRepository.remove)
+    try {
+      val userRef = Utils.getActorRef(actorSystem, vm.user)
+      userRef ! VmIsDeadMessage(vm.id, tasks)
+    } catch {
+      case exception: Throwable => println(s"Could not find actor for userId: ${vm.user}")
+    }
+  }
+
+  def markHypervisorAsDeadRecursively(hypervisor: Hypervisor, actorSystem: ActorSystem) = {
+    hypervisor.state = HypervisorState.DEAD.toString
+    HypervisorRepository.update(hypervisor)
+    markAllMachinesAsDeadAdNotifyOwners(hypervisor, actorSystem)
   }
 }

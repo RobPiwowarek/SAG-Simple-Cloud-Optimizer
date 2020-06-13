@@ -9,7 +9,7 @@ import org.apache.spark.ml.regression.GBTRegressionModel
 import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{TaskFinishedMessage, TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
-import pl.rpw.core.local.message.{CreateVMMessage, TaskCreationFailed, TaskGenerationRequestMessage, VMCreated}
+import pl.rpw.core.local.message.{CreateVMMessage, TaskCreationFailed, TaskGenerationRequestMessage, VMCreated, VmIsDeadMessage}
 import pl.rpw.core.persistance.task.TaskSpecification
 
 import scala.collection.mutable
@@ -138,6 +138,18 @@ class LocalUtilityActor(val id: String,
     case VMCreated(id) =>
       println(s"""VM $id requested by local agent ${this.id} was created""")
       vms.add(id)
+
+    case VmIsDeadMessage(vm, tasks) =>
+      println(s"""VM $id was found dead""")
+      vms.remove(vm)
+      tasks.foreach(task => {
+        val specification = this.tasks.get(task)
+        specification.map(_ => {
+          println(s"Removing dead task $task")
+          decreaseUsage(_)
+          this.tasks.remove(task)
+        })
+      })
 
     case any =>
       println(any)
