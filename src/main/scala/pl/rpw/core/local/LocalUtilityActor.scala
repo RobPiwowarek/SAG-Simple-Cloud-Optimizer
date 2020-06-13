@@ -42,9 +42,9 @@ class LocalUtilityActor(val id: String,
   var usageHistoryDisk = mutable.Stack[Sample]()
 
   if (!Files.exists(Paths.get(historyFilePath))) {
-    LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
-    LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
-    LocalUtilityHelper.initUsageHistory(historyCpuPath, 50)
+    LocalUtilityHelper.initUsageHistory(historyCpuPath, 1000)
+    LocalUtilityHelper.initUsageHistory(historyRamPath, 1000)
+    LocalUtilityHelper.initUsageHistory(historyDiskPath, 1000)
   }
 
   var modelCPU: GBTRegressionModel = LocalUtilityHelper.initNewModel(historyCpuPath)
@@ -52,15 +52,19 @@ class LocalUtilityActor(val id: String,
   var modelDisk: GBTRegressionModel = LocalUtilityHelper.initNewModel(historyDiskPath)
 
   def adjustSpecification(specification: VirtualMachineSpecification): VirtualMachineSpecification = {
-    val predictedCpu = LocalUtilityHelper.predict(modelCPU, usageHistoryCPU).toInt / vms.size
-    val predictedRam = LocalUtilityHelper.predict(modelRam, usageHistoryRam).toInt / vms.size
-    val predictedDisk = LocalUtilityHelper.predict(modelDisk, usageHistoryDisk).toInt / vms.size
+    if (vms.isEmpty) {
+      specification
+    } else {
+      val predictedCpu = LocalUtilityHelper.predict(modelCPU, usageHistoryCPU).toInt / vms.size
+      val predictedRam = LocalUtilityHelper.predict(modelRam, usageHistoryRam).toInt / vms.size
+      val predictedDisk = LocalUtilityHelper.predict(modelDisk, usageHistoryDisk).toInt / vms.size
 
-    new VirtualMachineSpecification(
-      if (predictedCpu == 0) specification.cpu else math.abs(predictedCpu - specification.cpu) / 2,
-      if (predictedRam == 0) specification.ram else math.abs(predictedRam - specification.ram) / 2,
-      if (predictedDisk == 0) specification.disk else math.abs(predictedDisk - specification.disk) / 2
-    )
+      new VirtualMachineSpecification(
+        if (predictedCpu == 0) specification.cpu else math.abs(predictedCpu - specification.cpu) / 2,
+        if (predictedRam == 0) specification.ram else math.abs(predictedRam - specification.ram) / 2,
+        if (predictedDisk == 0) specification.disk else math.abs(predictedDisk - specification.disk) / 2
+      )
+    }
   }
 
   def updateModels() = {

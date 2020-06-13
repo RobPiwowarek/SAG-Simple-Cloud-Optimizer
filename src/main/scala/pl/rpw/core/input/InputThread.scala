@@ -152,27 +152,32 @@ class InputThread(actorSystem: ActorSystem,
 
   override def run(): Unit = {
     while (true) {
-      val line = StdIn.readLine().split(":")
-      val command = line(0)
-      val data = line(1)
+      try {
+        val line = StdIn.readLine().split(":")
+        val command = line(0)
+        val data = line(1)
 
-      command match {
-        case "start" => {
-          startAgent(data)
+        command match {
+          case "start" => {
+            startAgent(data)
+          }
+          case "stop" => {
+            stopAgent(data)
+          }
+          case "request" => {
+            requestAgent(data)
+          }
+          case "task" => {
+            requestTask(data)
+          }
+          case "print" => {
+            HypervisorRepository.findAll().foreach(println)
+            VMRepository.findAll().foreach(println)
+            actors.foreach{case (id, ref) => println(s"actor: $id $ref")}
+          }
         }
-        case "stop" => {
-          stopAgent(data)
-        }
-        case "request" => {
-          requestAgent(data)
-        }
-        case "task" => {
-          requestTask(data)
-        }
-        case "print" => {
-          HypervisorRepository.findAll().foreach(println)
-          VMRepository.findAll().foreach(println)
-        }
+      } catch {
+        case exception: Throwable => println(exception)
       }
     }
   }

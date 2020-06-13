@@ -12,7 +12,7 @@ import org.apache.spark.{SparkContext, sql}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-object LocalUtilityHelper extends {
+object LocalUtilityHelper {
 
   //creating Spark object
   private[this] val spark = SparkSession.builder().master("local[*]").getOrCreate()
@@ -42,7 +42,7 @@ object LocalUtilityHelper extends {
                          append: Boolean) {
     val writer = new FileWriter(new File(filePath), append)
     for (item <- history) {
-      writer.write(item.timestamp.toString() + ";" + item.usage.toString() + '\n')
+      writer.write(item.timestamp.toString + ";" + item.usage.toString + '\n')
     }
     writer.close()
   }
@@ -52,11 +52,10 @@ object LocalUtilityHelper extends {
    * The sin shape is based of the parameter
    */
   def initUsageHistory(filePath: String, fileLength: Int): Unit = {
-    var value: Double = 0.0d
     val usageHistory = mutable.Stack[Sample]()
 
     for (x <- 0 to fileLength) {
-      value = 0
+      val value = 0.0
       usageHistory.push(Sample(value, LocalDateTime.now()))
     }
     writeHistoryToFile(filePath, usageHistory, false)
@@ -129,7 +128,7 @@ object LocalUtilityHelper extends {
     var valueList = df.select("value").map(r => r.getString(0)).collect.toList
 
     //reversing list to get the newest values first and limiting its length to 1000 elements
-    valueList = valueList.reverse.take(10)
+    valueList = valueList.reverse.take(1000)
     //reshaping data
     val temporized_list = this.temporize(valueList)
 
