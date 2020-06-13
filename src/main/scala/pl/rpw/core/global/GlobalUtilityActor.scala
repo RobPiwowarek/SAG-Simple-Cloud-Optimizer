@@ -72,7 +72,6 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
           } catch {
             case exception: Throwable => logger.error(s"Exception occured when awaiting for resolving of vm ${vm.id} and task ${specification.taskId} in GUA: ${exception.getMessage}")
           }
-
       }
 
     case OverprovisioningMessage(hypervisor) =>
