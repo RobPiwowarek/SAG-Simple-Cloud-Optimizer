@@ -4,9 +4,13 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.{ActorRef, ActorSystem, Props}
 import akka.util.Timeout
+import pl.rpw.core.MainApp.system
+import pl.rpw.core.global.GlobalUtilityActor
 import pl.rpw.core.global.message.{TaskRequestMessage, VirtualMachineRequestMassage}
+import pl.rpw.core.hipervisor.HypervisorActor
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
-import pl.rpw.core.persistance.hypervisor.HypervisorRepository
+import pl.rpw.core.local.LocalUtilityActor
+import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
 import pl.rpw.core.persistance.vm.VMRepository
 import pl.rpw.core.vm.VirtualMachineActor
 import pl.rpw.core.vm.message.TaskSpecification
@@ -31,14 +35,54 @@ class InputThread(actorSystem: ActorSystem,
       )))
   }
 
+  def createLocalAgent(id: String, data: String) = {
+    val specification = data.split("/")
+    actorSystem.actorOf(Props(
+      new LocalUtilityActor(
+        id,
+        Integer.parseInt(specification(0)),
+        Integer.parseInt(specification(1)),
+        Integer.parseInt(specification(2)),
+        Integer.parseInt(specification(3)),
+        Integer.parseInt(specification(4))
+      )
+    ), id)
+  }
+
+  def createHypervisor(id: String, data: String) = {
+    val specification = data.split("/")
+    val hv1 = Hypervisor(id = id, state = "IDLE",
+      cpu = Integer.parseInt(specification(0)),
+      ram = Integer.parseInt(specification(1)),
+      disk = Integer.parseInt(specification(2)),
+      freeCpu = Integer.parseInt(specification(0)),
+      freeRam = Integer.parseInt(specification(1)),
+      freeDisk = Integer.parseInt(specification(2))
+    )
+    HypervisorRepository.insert(hv1)
+    system.actorOf(
+      Props(new HypervisorActor(
+        Integer.parseInt(specification(0)),
+        Integer.parseInt(specification(1)),
+        Integer.parseInt(specification(2)), "hv-1")),
+      id)
+  }
+
   def createActor(actorType: String,
                   id: String,
                   data: String): ActorRef = {
     val ref = actorType match {
-      case "VM" | "vm" => createVM(id, data)
+      case "GUA" | "gua" => createGlobalAgent
+      case "LUA" | "lua" => createLocalAgent(id, data)
+      case "HV" | "hv" => createHypervisor(id, data)
     }
     actors.put(id, ref)
     ref
+  }
+
+  private def createGlobalAgent = {
+    actorSystem.actorOf(Props(
+      new GlobalUtilityActor(actors)), "GUA")
   }
 
   def startAgent(data: String): Unit = {
