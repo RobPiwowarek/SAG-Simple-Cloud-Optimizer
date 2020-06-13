@@ -9,7 +9,7 @@ import pl.rpw.core.global.GlobalUtilityActor
 import pl.rpw.core.global.message.{TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.HypervisorActor
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
-import pl.rpw.core.local.LocalUtilityActor
+import pl.rpw.core.local.{LocalUtilityActor, TaskSpecificationGenerator}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
 import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.VMRepository
@@ -37,7 +37,7 @@ class InputThread(actorSystem: ActorSystem,
 
   def createLocalAgent(id: String, data: String) = {
     val specification = data.split("/")
-    actorSystem.actorOf(Props(
+    val ref = actorSystem.actorOf(Props(
       new LocalUtilityActor(
         id,
         Integer.parseInt(specification(0)),
@@ -47,6 +47,8 @@ class InputThread(actorSystem: ActorSystem,
         Integer.parseInt(specification(4))
       )
     ), id)
+    new TaskSpecificationGenerator(FiniteDuration(Integer.parseInt(specification(4)), TimeUnit.SECONDS), ref, id).run()
+    ref
   }
 
   def createHypervisor(id: String, data: String) = {
