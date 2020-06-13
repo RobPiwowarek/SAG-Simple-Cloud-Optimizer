@@ -6,6 +6,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.global.message._
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
+import pl.rpw.core.local.message.TaskCreationFailed
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
 import pl.rpw.core.persistance.task.{TaskSpecification, TaskSpecificationsRepository}
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
@@ -37,8 +38,12 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
           logger.info(s"Could not find hypervisor for specification: $specification and userId: $userId")
         case hypervisor =>
           val vm = createVM(userId, specification, hypervisor)
-          val hypervisorRef = hypervisors.get(hypervisor.id).orNull // fixme: Paula, czy to moze byc faktycznie nullem?, jesli tak to jak handlujemy taka sytuacje
-          hypervisorRef ! AttachVMMessage(vm.id)
+          try {
+            val hypervisorRef = Await.result(actorSystem.actorSelection(hypervisor.id).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+            hypervisorRef ! AttachVMMessage(vm.id)
+          } catch {
+            case exception: Throwable => logger.error(s"Exception occured when awaiting for resolving of hypervisor ${hypervisor.id} in VMRequest in GUA: ${exception.getMessage}")
+          }
       }
 
     case TaskRequestMessage(specification) =>
@@ -54,14 +59,20 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       vm match {
         case Consts.EmptyVM =>
           logger.info(s"Empty VM returned for Task Request Message with specification $specification")
+          sender() ! TaskCreationFailed(specification)
         case vm =>
-          val vmRef = VMs.get(vm.id).orNull
-          if (vmRef == null) {
-            TaskSpecificationsRepository.insert(specification)
-            taskQueues(specification.userId).enqueue(specification)
-          } else {
-            vmRef ! TaskMessage(specification)
+          try {
+            val vmRef = Await.result(actorSystem.actorSelection(vm.id).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+            if (vmRef == null) {
+              TaskSpecificationsRepository.insert(specification)
+              taskQueues(specification.userId).enqueue(specification)
+            } else {
+              vmRef ! TaskMessage(specification)
+            }
+          } catch {
+            case exception: Throwable => logger.error(s"Exception occured when awaiting for resolving of vm ${vm.id} and task ${specification.taskId} in GUA: ${exception.getMessage}")
           }
+
       }
 
     case OverprovisioningMessage(hypervisor) =>
@@ -132,14 +143,23 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
     // choose VM that uses most of overprovisioned resource and check if migration is possible.
     // If so, select hipervisor by MaxMin strategy and migrate machine
     val vm = VMSelector.selectVMToMigrate(hypervisor)
-    HypervisorSelector.selectDestinationHypervisorForMigration(vm.toSpecs, hypervisor) match {
-      case Consts.EmptyHypervisor =>
-        println("Cannot migrate " + hypervisor)
-      // todo:
-      case destinationHypervisor =>
-        val vmRef = VMs.get(vm.id).orNull
-        vmRef ! MigrationMessage(destinationHypervisor.id)
+    vm match {
+      case Consts.EmptyVM =>
+        logger.info(s"Couldnt find vm for migrating most relevant machine if possible, hypervisor: ${hypervisor.id}")
+      case vm =>
+        HypervisorSelector.selectDestinationHypervisorForMigration(vm.toSpecs, hypervisor) match {
+          case Consts.EmptyHypervisor =>
+            logger.info("Cannot migrate " + hypervisor)
+          case destinationHypervisor =>
+            try {
+              val vmRef = Await.result(actorSystem.actorSelection(vm.id).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+              vmRef ! MigrationMessage(destinationHypervisor.id)
+            } catch {
+              case exception: Throwable => logger.error(s"Exception occured when awaiting for resolving of vm ${vm.id} and hypervisor ${hypervisor.id} in GUA: ${exception.getMessage}")
+            }
+        }
     }
+
   }
 
   def migrateAllMachinesIfPossible(hypervisor: Hypervisor): Unit = {
@@ -196,19 +216,27 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
 
   private def initVirtualMachines(): Unit = {
     val initialVMs = VMRepository.findAll()
-    initialVMs.foreach(vm => {
-      val path = "user/" + vm.id
-      val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
-      VMs.put(vm.id, ref)
-    })
+    try {
+      initialVMs.foreach(vm => {
+        val path = "user/" + vm.id
+        val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+        VMs.put(vm.id, ref)
+      })
+    } catch {
+      case exception: Throwable => logger.error(s"Exception occured while initialising virutal machines in GUA: ${exception.getMessage}")
+    }
   }
 
   private def initHypervisors(): Unit = {
     val initialHypervisors = HypervisorRepository.findAll()
-    initialHypervisors.foreach(h => {
-      val path = "user/" + h.id
-      val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
-      hypervisors.put(h.id, ref)
-    })
+    try {
+      initialHypervisors.foreach(h => {
+        val path = "user/" + h.id
+        val ref = Await.result(actorSystem.actorSelection(path).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+        hypervisors.put(h.id, ref)
+      })
+    } catch {
+      case exception: Throwable => logger.error(s"Exception occured while initialising hypervisors in GUA: ${exception.getMessage}")
+    }
   }
 }
