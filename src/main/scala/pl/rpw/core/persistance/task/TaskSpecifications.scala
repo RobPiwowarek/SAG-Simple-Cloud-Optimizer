@@ -12,8 +12,9 @@ class TaskSpecifications(tag: Tag) extends Table[TaskSpecificationEntity](tag, "
   def disk = column[Int]("DISK")
   def time = column[Int]("TIME")
   def order = column[Int]("ORDER", O.AutoInc)
+  def vm = column[Option[String]]("VM")
 
   // Every table needs a * projection with the same type as the table's type parameter
   def * =
-    (id, userId, time, cpu, ram, disk, order) <> (TaskSpecificationEntity.tupled, TaskSpecificationEntity.unapply)
+    (id, userId, time, cpu, ram, disk, order, vm) <> (TaskSpecificationEntity.tupled, TaskSpecificationEntity.unapply)
 }

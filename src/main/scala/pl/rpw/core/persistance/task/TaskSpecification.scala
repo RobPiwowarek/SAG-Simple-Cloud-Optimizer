@@ -8,7 +8,7 @@ final case class TaskSpecification(taskId: String,
                                    disk: Int) {
   def toEntity: TaskSpecificationEntity = {
     // fixme: last parameter should be replaced in base by autoincrement I believe.
-    TaskSpecificationEntity(taskId, userId, time, cpu, ram, disk, 0)
+    TaskSpecificationEntity(taskId, userId, time, cpu, ram, disk, 0, None)
   }
 
   override def toString: String = {

@@ -6,13 +6,14 @@ final case class TaskSpecificationEntity(taskId: String,
                                          cpu: Int,
                                          ram: Int,
                                          disk: Int,
-                                         order: Int) {
+                                         order: Int,
+                                         var vm: Option[String]) {
   def toSpec: TaskSpecification = {
     TaskSpecification(taskId, userId, time, cpu, ram, disk)
   }
 
   override def toString: String = {
-    s"""TaskSpecificationEntity taskId = $taskId userId = $userId time = $time cpu = $cpu ram = $ram disk = $disk order = $order"""
+    s"""TaskSpecificationEntity taskId = $taskId userId = $userId time = $time cpu = $cpu ram = $ram disk = $disk order = $order vm = $vm"""
       .stripMargin
   }
 }

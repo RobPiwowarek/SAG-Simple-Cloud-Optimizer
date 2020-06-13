@@ -9,9 +9,10 @@ import pl.rpw.core.global.GlobalUtilityActor
 import pl.rpw.core.global.message.{TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.HypervisorActor
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
+import pl.rpw.core.local.message.CreateVMMessage
 import pl.rpw.core.local.{LocalUtilityActor, TaskSpecificationGenerator}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
-import pl.rpw.core.persistance.task.TaskSpecification
+import pl.rpw.core.persistance.task.{TaskSpecification, TaskSpecificationsRepository}
 import pl.rpw.core.persistance.vm.VMRepository
 import pl.rpw.core.vm.VirtualMachineActor
 
@@ -47,8 +48,11 @@ class InputThread(actorSystem: ActorSystem,
         Integer.parseInt(specification(4))
       )
     ), id)
-    new TaskSpecificationGenerator(FiniteDuration(Integer.parseInt(specification(4)), TimeUnit.SECONDS), ref, id).run()
-    ref
+    new Thread(
+      new TaskSpecificationGenerator(
+        FiniteDuration(Integer.parseInt(specification(4)), TimeUnit.SECONDS), actorSystem, id)
+    ).start()
+    actors.put(id, ref)
   }
 
   def createHypervisor(id: String, data: String) = {
@@ -62,36 +66,57 @@ class InputThread(actorSystem: ActorSystem,
       freeDisk = Integer.parseInt(specification(2))
     )
     HypervisorRepository.insert(hv1)
-    system.actorOf(
+    val ref = system.actorOf(
       Props(new HypervisorActor(
         Integer.parseInt(specification(0)),
         Integer.parseInt(specification(1)),
-        Integer.parseInt(specification(2)), "hv-1")),
+        Integer.parseInt(specification(2)),
+        id)),
       id)
+    actors.put(id, ref)
+  }
+
+  def runVmFlowForLUA(data: String) = {
+    val specification = data.split("/")
+    val lua = specification(3)
+    val vmSpecification = new VirtualMachineSpecification(
+        Integer.parseInt(specification(0)),
+        Integer.parseInt(specification(1)),
+        Integer.parseInt(specification(2))
+      )
+
+    implicit val timeout = Timeout(FiniteDuration(1, TimeUnit.SECONDS))
+    implicit val ec = scala.concurrent.ExecutionContext.global
+    actorSystem.actorSelection(s"user/$lua").resolveOne().onComplete {
+      case Success(ref) => {
+        ref ! CreateVMMessage(vmSpecification)
+      }
+      case Failure(exception) => println("Cannot find GUA")
+    }
+    null
   }
 
   def createActor(actorType: String,
-                  id: String,
-                  data: String): ActorRef = {
-    val ref = actorType match {
+                  data: String) {
+    val splitData = data.split("-")
+    actorType match {
       case "GUA" | "gua" => createGlobalAgent
-      case "LUA" | "lua" => createLocalAgent(id, data)
-      case "HV" | "hv" => createHypervisor(id, data)
+      case "LUA" | "lua" => createLocalAgent(splitData(0), splitData(1))
+      case "HV" | "hv" => createHypervisor(splitData(0), splitData(1))
+      case "VM" | "vm" => runVmFlowForLUA(data)
     }
-    actors.put(id, ref)
-    ref
   }
 
   private def createGlobalAgent = {
-    actorSystem.actorOf(Props(
+    val ref = actorSystem.actorOf(Props(
       new GlobalUtilityActor(actors)), "GUA")
+    actors.put("gua", ref)
   }
 
   def startAgent(data: String): Unit = {
-    val id = data.split(" ")(0)
-    val actorType = data.split(" ")(1)
+    val actorType = data.split(" ")(0)
 
-    val ref = actors.getOrElse(id, createActor(actorType, id, data.split(" ")(2)))
+    val ref = createActor(actorType, data.split(" ")(1))
 
     println("started: " + ref)
   }
@@ -117,7 +142,7 @@ class InputThread(actorSystem: ActorSystem,
           Integer.parseInt(specification(0)),
           Integer.parseInt(specification(1)),
           Integer.parseInt(specification(2)))
-        ref ! VirtualMachineRequestMassage("user", vmSpecification)
+        ref ! VirtualMachineRequestMassage(specification(3), vmSpecification)
       }
       case Failure(exception) => println("Cannot find GUA")
     }
@@ -175,8 +200,10 @@ class InputThread(actorSystem: ActorSystem,
           case "print" => {
             HypervisorRepository.findAll().foreach(println)
             VMRepository.findAll().foreach(println)
+            TaskSpecificationsRepository.findAll().foreach(println)
             actors.foreach{case (id, ref) => println(s"actor: $id $ref")}
           }
+          case _ => println("Illegal command")
         }
       } catch {
         case exception: Throwable => println(exception)

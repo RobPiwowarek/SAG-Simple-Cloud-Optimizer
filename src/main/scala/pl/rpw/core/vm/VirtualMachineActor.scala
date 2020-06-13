@@ -3,15 +3,16 @@ package pl.rpw.core.vm
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorSystem}
+import pl.rpw.core.Utils
 import pl.rpw.core.global.message.TaskFinishedMessage
 import pl.rpw.core.hipervisor.message._
+import pl.rpw.core.persistance.hypervisor.HypervisorRepository
 import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage}
 
 import scala.collection.mutable
-import scala.concurrent.Await
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.FiniteDuration
 
 class VirtualMachineActor(val id: String,
                           val cpu: Int,
@@ -84,10 +85,8 @@ class VirtualMachineActor(val id: String,
     val task = new Runnable {
       def run(): Unit = {
         freeResources(specification.cpu, specification.ram, specification.disk)
-
-        val actorSystem = ActorSystem()
-        val localUtilityActor = actorSystem.actorSelection("user/" + specification.userId)
-        localUtilityActor ! TaskFinishedMessage(specification.taskId, specification.userId)
+        val globalUtilityActor = Utils.globalUtility(actorSystem)
+        globalUtilityActor ! TaskFinishedMessage(specification.taskId, specification.userId)
 
         tasks.remove(specification)
         if (tasks.isEmpty) {
@@ -96,7 +95,6 @@ class VirtualMachineActor(val id: String,
       }
     }
 
-    val actorSystem = ActorSystem()
     val scheduler = actorSystem.scheduler
     implicit val executor = actorSystem.dispatcher
     scheduler.scheduleOnce(
@@ -106,13 +104,26 @@ class VirtualMachineActor(val id: String,
   }
 
   private def freeMachinesResources(vm: VM) = {
-    val hypervisor = Await.result(actorSystem.actorSelection("user/" + vm.hypervisor).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
-    hypervisor ! FreeResourcesMessage(id)
+    try {
+      val hypervisor = Utils.getActorRef(actorSystem, vm.hypervisor)
+      hypervisor ! FreeResourcesMessage(id)
+    } catch {
+      case exception: Throwable =>
+        println(s"Exception occured when awaiting for resolving of hypervisor ${vm.hypervisor} in VM ${vm.id}: ${exception.getMessage}")
+        Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(vm.hypervisor), actorSystem)
+    }
+
   }
 
   def requestMachinesResources(vm: VM) = {
-    val hypervisor = Await.result(actorSystem.actorSelection("user/" + vm.hypervisor).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
-    hypervisor ! AllocateResourcesMessage(id)
+    try {
+      val hypervisor = Utils.getActorRef(actorSystem, vm.hypervisor)
+      hypervisor ! AllocateResourcesMessage(id)
+    } catch {
+      case exception: Throwable =>
+        println(s"Exception occured when awaiting for resolving of hypervisor ${vm.hypervisor} in VM ${vm.id}: ${exception.getMessage}")
+        Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(vm.hypervisor), actorSystem)
+    }
   }
 
 }
