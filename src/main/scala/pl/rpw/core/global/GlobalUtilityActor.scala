@@ -7,7 +7,7 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.global.message._
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
-import pl.rpw.core.persistance.task.TaskSpecification
+import pl.rpw.core.persistance.task.{TaskSpecification, TaskSpecificationsRepository}
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 import pl.rpw.core.vm.VirtualMachineActor
 import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage}
@@ -57,6 +57,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
         case vm =>
           val vmRef = VMs.get(vm.id).orNull
           if (vmRef == null) {
+            TaskSpecificationsRepository.insert(specification)
             taskQueues(specification.userId).enqueue(specification)
           } else {
             vmRef ! TaskMessage(specification)
@@ -83,6 +84,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
           val vmRef = Await.result(actorSystem.actorSelection(vm.id).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
           if (vmRef != null) {
             vmRef ! TaskMessage(task)
+            TaskSpecificationsRepository.remove(taskId)
             taskQueues.update(userId, taskQueues(userId).filterNot(_.equals(task)))
           }
         }

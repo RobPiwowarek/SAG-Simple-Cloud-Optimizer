@@ -5,6 +5,7 @@ import pl.rpw.core.global.GlobalUtilityActor
 import pl.rpw.core.hipervisor.HypervisorActor
 import pl.rpw.core.input.InputThread
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
+import pl.rpw.core.persistance.task.TaskSpecificationsRepository
 import pl.rpw.core.persistance.vm.VMRepository
 
 import scala.collection.mutable
@@ -13,6 +14,7 @@ object MainApp extends App {
   VMRepository.setup()
   HypervisorRepository.setup()
   HypervisorRepository.findAll().foreach(_ => println)
+  TaskSpecificationsRepository.setup()
 
   val system = ActorSystem("SAG-System")
 

@@ -8,7 +8,7 @@ import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{TaskFinishedMessage, TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.local.message.{CreateVMMessage, TaskGenerationRequestMessage, VMCreated}
-import pl.rpw.core.vm.message.TaskSpecification
+import pl.rpw.core.persistance.task.TaskSpecification
 
 import scala.collection.mutable
 

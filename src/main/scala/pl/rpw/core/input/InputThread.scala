@@ -11,9 +11,9 @@ import pl.rpw.core.hipervisor.HypervisorActor
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.local.LocalUtilityActor
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
+import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.VMRepository
 import pl.rpw.core.vm.VirtualMachineActor
-import pl.rpw.core.vm.message.TaskSpecification
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration
@@ -136,13 +136,14 @@ class InputThread(actorSystem: ActorSystem,
     implicit val ec = scala.concurrent.ExecutionContext.global
     actorSystem.actorSelection("user/GUA").resolveOne().onComplete {
       case Success(ref) => {
-        val taskSpecification: TaskSpecification = new TaskSpecification(
+        val taskSpecification: TaskSpecification = TaskSpecification(
           specification(0),
           specification(1),
           Integer.parseInt(specification(2)),
           Integer.parseInt(specification(3)),
           Integer.parseInt(specification(4)),
-          Integer.parseInt(specification(5)))
+          Integer.parseInt(specification(5))
+        )
         ref ! TaskRequestMessage(taskSpecification)
       }
       case Failure(exception) => println(s"Cannot find GUA: ${exception.getMessage}")
