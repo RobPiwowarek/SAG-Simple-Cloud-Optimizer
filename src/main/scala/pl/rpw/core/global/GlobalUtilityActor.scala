@@ -89,7 +89,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
 
         ref ! TaskFinishedMessage(taskId, userId)
       } catch {
-        case exception => logger.error(s"Exception occured when awaiting for resolving of actor $userId and task $taskId in GUA: ${exception.getMessage}")
+        case exception: Throwable => logger.error(s"Exception occured when awaiting for resolving of actor $userId and task $taskId in GUA: ${exception.getMessage}")
       }
   }
 

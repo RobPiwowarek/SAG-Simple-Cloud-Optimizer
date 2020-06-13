@@ -1,4 +1,4 @@
-package pl.rpw.core
+package pl.rpw.core.local
 
 import akka.actor.ActorRef
 import pl.rpw.core.local.message.TaskGenerationRequestMessage
