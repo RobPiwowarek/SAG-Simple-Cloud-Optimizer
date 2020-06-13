@@ -65,7 +65,7 @@ object HypervisorSelector extends LazyLogging {
         selectHypervisorByMaxMin(idleHypervisors, specification)
       } else {
         logger.info("Could not find hypervisor for the following specification: " + specification.toString)
-        null
+        Consts.EmptyHypervisor
       }
     } else {
       selectHypervisorByMaxMin(activeHypervisors, specification)

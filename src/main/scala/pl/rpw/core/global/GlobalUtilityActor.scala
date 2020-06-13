@@ -7,9 +7,10 @@ import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.global.message._
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
+import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 import pl.rpw.core.vm.VirtualMachineActor
-import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage, TaskSpecification}
+import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage}
 import pl.rpw.core.{Consts, Utils}
 
 import scala.collection.mutable
@@ -29,17 +30,19 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
 
   override def receive: Receive = {
     case VirtualMachineRequestMassage(userId, specification) =>
-      println(specification + " requested from " + userId)
+      logger.info(specification + " requested from " + userId)
       val hypervisor = HypervisorSelector.selectHypervisor(specification)
-      if (hypervisor == null) {
-        // queue? send back a message?
+      hypervisor match {
+        case Consts.EmptyHypervisor =>
+          logger.info(s"Could not find hypervisor for specification: $specification and userId: $userId")
+        case hypervisor =>
+          val vm = createVM(userId, specification, hypervisor)
+          val hypervisorRef = hypervisors.get(hypervisor.id).orNull // fixme: Paula, czy to moze byc faktycznie nullem?, jesli tak to jak handlujemy taka sytuacje
+          hypervisorRef ! AttachVMMessage(vm.id)
       }
-      val vm = createVM(userId, specification, hypervisor)
-      val hypervisorRef = hypervisors.get(hypervisor.id).orNull // fixme: Paula, czy to moze byc faktycznie nullem?, jesli tak to jak handlujemy taka sytuacje
-      hypervisorRef ! AttachVMMessage(vm.id)
 
     case TaskRequestMessage(specification) =>
-      println(specification + " requested")
+      logger.info(specification + " requested")
 
       if (!taskQueues.keys.exists(_.equals(specification.userId))) {
         taskQueues.put(specification.userId, mutable.Queue.empty)
@@ -47,19 +50,25 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
 
       // enqueue task if no vm can handle it
       val vm = VMSelector.selectVM(specification.userId, specification)
-      val vmRef = VMs.get(vm.id).orNull
-      if (vmRef == null) {
-        taskQueues(specification.userId).enqueue(specification)
-      } else {
-        vmRef ! TaskMessage(specification)
+
+      vm match {
+        case Consts.EmptyVM =>
+          logger.info(s"Empty VM returned for Task Request Message with specification $specification")
+        case vm =>
+          val vmRef = VMs.get(vm.id).orNull
+          if (vmRef == null) {
+            taskQueues(specification.userId).enqueue(specification)
+          } else {
+            vmRef ! TaskMessage(specification)
+          }
       }
 
     case OverprovisioningMessage(hypervisor) =>
-      println("Overprovisioning from: " + hypervisor)
+      logger.info("Overprovisioning from: " + hypervisor)
       migrateMostRelevantMachineIfPossible(HypervisorRepository.findById(hypervisor))
 
     case UnderprovisioningMessage(hypervisor) =>
-      println("Underprovisioning from: " + hypervisor)
+      logger.info("Underprovisioning from: " + hypervisor)
       migrateAllMachinesIfPossible(HypervisorRepository.findById(hypervisor))
 
     case TaskFinishedMessage(taskId, userId) =>
@@ -69,13 +78,11 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
           taskQueues.put(userId, mutable.Queue.empty)
         }
 
-        // todo: pytanie czy to wyciaga taski z kolejki???
         for (task <- taskQueues(userId)) {
           val vm = VMSelector.selectVM(userId, task)
-          val vmRef = VMs.get(vm.id).orNull
+          val vmRef = Await.result(actorSystem.actorSelection(vm.id).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
           if (vmRef != null) {
             vmRef ! TaskMessage(task)
-            // fixme: i hope it works
             taskQueues.update(userId, taskQueues(userId).filterNot(_.equals(task)))
           }
         }

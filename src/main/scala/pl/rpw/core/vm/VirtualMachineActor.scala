@@ -5,8 +5,9 @@ import java.util.concurrent.TimeUnit
 import akka.actor.{Actor, ActorSystem}
 import pl.rpw.core.global.message.TaskFinishedMessage
 import pl.rpw.core.hipervisor.message._
+import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
-import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage, TaskSpecification}
+import pl.rpw.core.vm.message.{MigrationMessage, TaskMessage}
 
 import scala.collection.mutable
 import scala.concurrent.Await

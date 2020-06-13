@@ -5,8 +5,8 @@ import java.util.concurrent.TimeUnit
 import akka.actor.ActorSystem
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.persistance.hypervisor.Hypervisor
+import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.VM
-import pl.rpw.core.vm.message.TaskSpecification
 
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, FiniteDuration}

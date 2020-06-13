@@ -7,9 +7,9 @@ import akka.util.Timeout
 import pl.rpw.core.global.message.{TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.persistance.hypervisor.HypervisorRepository
+import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.VMRepository
 import pl.rpw.core.vm.VirtualMachineActor
-import pl.rpw.core.vm.message.TaskSpecification
 
 import scala.collection.mutable
 import scala.concurrent.duration.FiniteDuration

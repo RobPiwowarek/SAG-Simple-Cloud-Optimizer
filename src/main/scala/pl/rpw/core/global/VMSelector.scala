@@ -1,9 +1,9 @@
 package pl.rpw.core.global
 
 import pl.rpw.core.persistance.hypervisor.Hypervisor
+import pl.rpw.core.persistance.task.TaskSpecification
 import pl.rpw.core.persistance.vm.{VM, VMRepository}
-import pl.rpw.core.vm.message.TaskSpecification
-import pl.rpw.core.{ResourceType, Utils}
+import pl.rpw.core.{Consts, ResourceType, Utils}
 
 object VMSelector {
   def selectMostRelevantResource(specification: TaskSpecification): ResourceType.Value = {
@@ -47,7 +47,7 @@ object VMSelector {
       if (idleVMs.nonEmpty) {
         selectVMforTaskByMaxMin(idleVMs, specification)
       } else {
-        null
+        Consts.EmptyVM
       }
     } else {
       selectVMforTaskByMaxMin(activeVMs, specification)
@@ -64,7 +64,7 @@ object VMSelector {
       if (idleVMs.nonEmpty) {
         selectVMForMigrationByMaxMin(idleVMs, mostRelevantResource)
       } else {
-        null
+        Consts.EmptyVM
       }
     } else {
       selectVMForMigrationByMaxMin(activeVMs, mostRelevantResource)
