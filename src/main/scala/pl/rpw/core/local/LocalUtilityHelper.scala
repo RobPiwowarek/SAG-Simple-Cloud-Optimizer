@@ -16,7 +16,7 @@ object LocalUtilityHelper {
 
   //creating Spark object
   private[this] val spark = SparkSession.builder().master("local[*]").getOrCreate()
-  spark.sparkContext.setLogLevel("ERROR")
+  spark.sparkContext.setLogLevel("INFO")
   val sparkContext: SparkContext = spark.sparkContext
   val sqlContext: SQLContext = spark.sqlContext
 
