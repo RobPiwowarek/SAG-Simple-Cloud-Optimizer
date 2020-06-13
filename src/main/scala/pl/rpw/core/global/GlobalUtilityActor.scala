@@ -59,7 +59,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       vm match {
         case Consts.EmptyVM =>
           logger.info(s"Empty VM returned for Task Request Message with specification $specification")
-          sender() ! TaskCreationFailed(specification)
+          sender() ! TaskCreationFailed(specification.taskId)
         case vm =>
           try {
             val vmRef = Await.result(actorSystem.actorSelection(vm.id).resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
