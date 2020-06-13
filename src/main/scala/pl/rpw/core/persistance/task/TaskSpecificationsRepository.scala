@@ -16,14 +16,39 @@ object TaskSpecificationsRepository {
     Await.result(db.run(tableQuery.schema.createIfNotExists), Duration.Inf)
   }
 
-  def findAll(): Seq[TaskSpecification] = {
+  def findAll(): Seq[TaskSpecificationEntity] = {
     val result = Await.result(db.run(tableQuery.result), Duration.Inf)
-    result.sortWith((x, y) => x.order < y.order).map(_.toSpec)
+    result.sortWith((x, y) => x.order < y.order)
   }
 
-  def insert(taskSpecification: TaskSpecification): Unit = {
-    val insertQuery = DBIO.seq(tableQuery += taskSpecification.toEntity)
+  def findByVmIsNull(): Seq[TaskSpecificationEntity] = {
+    val searchQuery = tableQuery.filter(_.vm.isEmpty === true).result
+    val result = Await.result(db.run(searchQuery), Duration.Inf)
+    result.sortWith((x, y) => x.order < y.order)
+  }
+
+  def findByVm(vm: String): Seq[TaskSpecificationEntity] = {
+    val searchQuery = tableQuery.filter(_.vm === vm).result
+    Await.result(db.run(searchQuery), Duration.Inf)
+  }
+
+  def findByUserAndVmIsNull(user: String): Seq[TaskSpecificationEntity] = {
+    val searchQuery = tableQuery
+      .filter(_.userId === user)
+      .filter(_.vm.isEmpty === true)
+      .result
+    val result = Await.result(db.run(searchQuery), Duration.Inf)
+    result.sortWith((x, y) => x.order < y.order)
+  }
+
+  def insert(taskSpecification: TaskSpecificationEntity): Unit = {
+    val insertQuery = DBIO.seq(tableQuery += taskSpecification)
     Await.result(db.run(insertQuery), Duration.Inf)
+  }
+
+  def update(taskSpecificationEntity: TaskSpecificationEntity): Unit = {
+    val updateQuery = DBIO.seq(tableQuery.filter(_.id === taskSpecificationEntity.taskId).update(taskSpecificationEntity))
+    Await.result(db.run(updateQuery), Duration.Inf)
   }
 
   def remove(taskId: String): Unit = {

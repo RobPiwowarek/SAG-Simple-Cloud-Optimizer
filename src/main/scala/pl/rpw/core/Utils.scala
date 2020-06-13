@@ -117,4 +117,8 @@ object Utils {
   def globalUtility(actorSystem: ActorSystem) = {
     Await.result(actorSystem.actorSelection("user/GUA").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
   }
+
+  def getActorRef(actorSystem: ActorSystem, path: String) = {
+    Await.result(actorSystem.actorSelection(s"user/$path").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+  }
 }

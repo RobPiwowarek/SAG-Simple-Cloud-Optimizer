@@ -78,11 +78,6 @@ class LocalUtilityActor(val id: String,
     currentRamUsage += specification.ram
     currentDiskUsage += specification.disk
     updateHistory(currentCpuUsage, currentRamUsage, currentDiskUsage)
-    if (usageHistoryCPU.size >= LocalUtilityHelper.trainingSetSize
-      && usageHistoryRam.size >= LocalUtilityHelper.trainingSetSize
-      && usageHistoryDisk.size >= LocalUtilityHelper.trainingSetSize) {
-      updateModels()
-    }
   }
 
   def decreaseUsage(specification: TaskSpecification) = {
@@ -103,12 +98,18 @@ class LocalUtilityActor(val id: String,
 
   override def receive: Receive = {
     case CreateVMMessage(specification) =>
+      if (usageHistoryCPU.size >= LocalUtilityHelper.trainingSetSize
+        && usageHistoryRam.size >= LocalUtilityHelper.trainingSetSize
+        && usageHistoryDisk.size >= LocalUtilityHelper.trainingSetSize) {
+        updateModels()
+      }
+
       println(s"""Local agent $id sending $specification to Global Utility Actor""")
       val adjustedSpecification = adjustSpecification(specification)
       val globalRef = Utils.globalUtility(actorSystem)
       globalRef ! VirtualMachineRequestMassage(id, adjustedSpecification)
 
-    case TaskGenerationRequestMessage =>
+    case TaskGenerationRequestMessage() =>
       if (vms.nonEmpty) {
         println(s"""Local agent $id is generating task...""")
         val specification = generateTask()
@@ -134,19 +135,20 @@ class LocalUtilityActor(val id: String,
         tasks.remove(taskId)
       })
 
-
     case VMCreated(id) =>
-      println(s"""VM $id requested by local agent $id was created""")
+      println(s"""VM $id requested by local agent ${this.id} was created""")
       vms.add(id)
 
+    case any =>
+      println(any)
   }
 
   private def generateTask() = {
     val timestamp = System.currentTimeMillis()
-    new TaskSpecification(
+    TaskSpecification(
       UUID.randomUUID().toString,
       id,
-      (timeAmplitude * math.abs(math.sin(timestamp))).toInt,
+      (timeAmplitude * math.abs(math.sin(timestamp))).toInt + 1, // to avoid 0 time
       (cpuAmplitude * math.abs(math.sin(timestamp))).toInt,
       (ramAmplitude * math.abs(math.sin(timestamp))).toInt,
       (diskAmplitude * math.abs(math.sin(timestamp))).toInt

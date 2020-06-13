@@ -3,8 +3,10 @@ package pl.rpw.core.hipervisor
 import java.util.concurrent.TimeUnit
 
 import akka.actor.Actor
+import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{OverprovisioningMessage, UnderprovisioningMessage}
 import pl.rpw.core.hipervisor.message._
+import pl.rpw.core.local.message.VMCreated
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
 import pl.rpw.core.persistance.vm.{VMRepository, VMState}
 
@@ -22,6 +24,9 @@ class HypervisorActor(val availableCpu: Int,
       print("Hypervisor " + id + " ")
       println("Received attach: " + vmId)
       val vm = VMRepository.findById(vmId)
+      if (vm.state.equals(VMState.CREATED.toString)) {
+        Utils.getActorRef(actorSystem, vm.user) ! VMCreated(vm.id)
+      }
       if (vm.hasActivelyUsedResources) {
         vm.state = VMState.ACTIVE.toString
       } else {
@@ -50,17 +55,13 @@ class HypervisorActor(val availableCpu: Int,
 
   def checkOverprovisioningAndNotifyGlobalAgent(hypervisor: Hypervisor): Unit = {
     if (hypervisor.isOverprovisioning) {
-      globalUtility ! OverprovisioningMessage(this.id)
+      Utils.globalUtility(actorSystem) ! OverprovisioningMessage(this.id)
     }
-  }
-
-  def globalUtility = {
-    Await.result(actorSystem.actorSelection("user/GUA").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
   }
 
   def checkUnderprovisioningAndNotifyGlobalAgent(hypervisor: Hypervisor): Unit = {
     if (hypervisor.isUnderprovisioning) {
-      globalUtility ! UnderprovisioningMessage(this.id)
+      Utils.globalUtility(actorSystem) ! UnderprovisioningMessage(this.id)
     }
   }
 
