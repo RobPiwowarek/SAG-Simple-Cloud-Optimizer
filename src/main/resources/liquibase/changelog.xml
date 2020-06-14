@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+         http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.6.xsd">
+
+    <changeSet id="1" author="pszwed">
+
+        <createTable tableName="HYPERVISORS">
+            <column name="id" type="varchar2(255 char)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="state" type="varchar(32 char)" defaultValue="IDLE">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cpu" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ram" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="disk" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="free_cpu" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="free_ram" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="free_disk" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+        <createTable tableName="VMS">
+            <column name="id" type="varchar2(255 char)">
+                <constraints primaryKey="true" nullable="false"/>
+            </column>
+            <column name="state" type="varchar(32 char)" defaultValue="CREATED">
+                <constraints nullable="false"/>
+            </column>
+            <column name="cpu" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="ram" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="disk" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="free_cpu" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="free_ram" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="free_disk" type="int" defaultValue="0">
+                <constraints nullable="false"/>
+            </column>
+            <column name="hypervisor" type="varchar2(255 char)">
+                <constraints nullable="false"/>
+            </column>
+            <column name="user" type="varchar2(255 char)">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+
+    </changeSet>
+
+</databaseChangeLog>

@@ -2,7 +2,7 @@ name := "simple-cloud-optimizer"
 
 lazy val commonSettings = Seq(
   organization := s"pl.rpw",
-  scalaVersion := "2.12.9",
+  scalaVersion := "2.11.8",
   scalacOptions := Seq(
     "-unchecked",
     "-deprecation",
@@ -26,15 +26,39 @@ lazy val commonSettings = Seq(
 
 lazy val dependencies = Seq(
   libraryDependencies ++= {
-    val akkaV                   = "2.6.4"
+    val akkaV                   = "2.5.31"
     val scalaTestV              = "3.1.1"
+    val sparkV                  = "2.2.0"
+    val slickV                  = "3.3.2"
+    val slf4jV                  = "1.6.4"
+    val h2V                     = "1.4.200"
+    val VmbV                    = "1.1.0"
+    val playLiquibaseV          = "2.2"
+    val scalaLoggingV           = "3.1.0"
+    val logbackV                = "1.1.2"
 
     Seq(
       "com.typesafe.akka"              %% "akka-actor"                                 % akkaV,
+      "com.typesafe.slick"             %% "slick"                                      % slickV,
+      // slick wants these 2
+      "org.slf4j"                       % "slf4j-nop"                                  % slf4jV,
+      "com.typesafe.slick"             %% "slick-hikaricp"                             % slickV,
+      "com.h2database"                  % "h2"                                         % h2V,
+      "com.typesafe.scala-logging"     %% "scala-logging"                              % scalaLoggingV,
+      "ch.qos.logback"                  % "logback-classic"                            % logbackV,
+
+      "de.aktey.akka.visualmailbox"    %% "collector"                                  % VmbV,
+      "de.aktey.akka.visualmailbox"    %% "common"                                     % VmbV,
 
       "com.typesafe.akka"              %% "akka-testkit"                               % akkaV                     % Test,
-      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test
-    )
+      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
+      "com.ticketfly"                  %% "play-liquibase"                             % playLiquibaseV,
+
+      "org.scalatest"                  %% "scalatest"                                  % scalaTestV                % Test,
+      "org.apache.spark"                % "spark-core_2.11"                            % sparkV,
+      "org.apache.spark"                % "spark-sql_2.11"                             % sparkV,
+      "org.apache.spark"                % "spark-mllib_2.11"                           % sparkV
+  )
   }
 )
 
