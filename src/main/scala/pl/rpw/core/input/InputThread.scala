@@ -96,6 +96,13 @@ class InputThread(actorSystem: ActorSystem,
     null
   }
 
+  def runThreadForLua(id: String, period: String): Unit = {
+    new Thread(
+      new TaskSpecificationGenerationScheduler(
+        FiniteDuration(Integer.parseInt(period), TimeUnit.SECONDS), actorSystem, id)
+    ).start()
+  }
+
   def createActor(actorType: String,
                   data: String) {
     val splitData = data.split("-")
@@ -104,6 +111,7 @@ class InputThread(actorSystem: ActorSystem,
       case "LUA" | "lua" => createLocalAgent(splitData(0), splitData(1))
       case "HV" | "hv" => createHypervisor(splitData(0), splitData(1))
       case "VM" | "vm" => runVmFlowForLUA(data)
+      case "USER" | "user" => runThreadForLua(splitData(0), splitData(1))
     }
   }
 

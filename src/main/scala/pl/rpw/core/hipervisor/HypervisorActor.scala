@@ -7,7 +7,7 @@ import pl.rpw.core.global.message.{OverprovisioningMessage, UnderprovisioningMes
 import pl.rpw.core.hipervisor.message._
 import pl.rpw.core.local.message.{VMCreated, VmIsDeadMessage}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
-import pl.rpw.core.persistance.vm.{VMRepository, VMState}
+import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 
 class HypervisorActor(val availableCpu: Int,
                       val availableRam: Int,
@@ -20,12 +20,7 @@ class HypervisorActor(val availableCpu: Int,
       logger.info(s"Hypervisor $id received attach: $vmId")
       val vm = VMRepository.findById(vmId)
       if (vm.state.equals(VMState.CREATED.toString)) {
-        try {
-          Utils.getActorRef(actorSystem, vm.user) ! VMCreated(vm.id)
-        } catch {
-          case exception: Throwable =>
-            logger.error(s"Exception occured when awaiting for resolving of actor ${vm.user} in hypervisor $id: ${exception.getMessage}")
-        }
+        notifyOwnerOfCreatedVM(vm)
       }
       if (vm.hasActivelyUsedResources) {
         vm.state = VMState.ACTIVE.toString
@@ -38,7 +33,7 @@ class HypervisorActor(val availableCpu: Int,
     case DetachVMMessage(vmId) =>
       logger.info(s"Hypervisor $id received detach: $vmId")
       val VM = VMRepository.findById(vmId)
-      if (VM.state.equals(VMState.ACTIVE.toString)) {
+      if (VM.hasActivelyUsedResources) {
         freeResources(VM.cpu, VM.ram, VM.disk)
       }
 
@@ -55,10 +50,18 @@ class HypervisorActor(val availableCpu: Int,
     case VmIsDeadMessage(vm, tasks) =>
       logger.info(s"Hypervisor $id received vm is dead: $vm")
       val VM = VMRepository.findById(vm)
-      if (VM.state.equals(VMState.ACTIVE.toString)) {
+      if (VM.hasActivelyUsedResources){
         freeResources(VM.cpu, VM.ram, VM.disk)
       }
+  }
 
+  private def notifyOwnerOfCreatedVM(vm: VM) = {
+    try {
+      Utils.getActorRef(actorSystem, vm.user) ! VMCreated(vm.id)
+    } catch {
+      case exception: Throwable =>
+        logger.error(s"Exception occured when awaiting for resolving of actor ${vm.user} in hypervisor $id: ${exception.getMessage}")
+    }
   }
 
   def checkOverprovisioningAndNotifyGlobalAgent(hypervisor: Hypervisor): Unit = {
@@ -82,7 +85,6 @@ class HypervisorActor(val availableCpu: Int,
       }
     }
   }
-
 
   def allocateResources(cpu: Int,
                         ram: Int,
