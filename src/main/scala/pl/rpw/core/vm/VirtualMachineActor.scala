@@ -34,7 +34,6 @@ class VirtualMachineActor(val id: String,
     case MigrationMessage(newHypervisor) =>
       print("Virtual Machine " + id + " ")
       println("Received migration order: " + newHypervisor)
-      val actorSystem = ActorSystem()
       val vm = VMRepository.findById(id)
       val oldHypervisor = vm.hypervisor.orNull
       startMigration(vm, oldHypervisor, actorSystem)

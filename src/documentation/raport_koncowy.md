@@ -1,3 +1,5 @@
+## Sprawozdanie z Projektu SAG WEITI PW 2020
+Autorzy: Paulina Szwed, Robert Piwowarek, Dawid Sitnik  
 ## 1. Koncepcja
 ### Cel zadania, architektura
 Celem zadania jest zbudowanie agentowego systemu do optymalizacji zużycia zasobów w chmurze. Optymalizacja powinna zapewnić minimalne zużycie
@@ -115,11 +117,6 @@ Wymieniane są następujące komunikaty:
  - attachVM - żądanie przydzielenia zasobów maszynie wirtualnej, wykorzystywane przy tworzeniu nowej maszyny oraz przy migracji,
  - detachVM - komunikat o możliwości usunięcia maszyny z listy danego hipernadzorcy (z maszyny fizycznej), wykorzystywany przy migracji.
 
-### Bibliografia
-1. Multi-Agent Based Dynamic Resource Provisioningand Monitoring In Cloud Computing Systems - 
-Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
-2. Energy Efficient Allocation of Virtual Machines in Cloud Data Centers - Anton Beloglazov and Rajkumar Buyya
-
 ## 2. Implementacja
 
 ### Architektura
@@ -128,7 +125,7 @@ Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
    <figcaption>Architektura systemu</figcaption>
 </p>
 
-### Glówne Procesy
+### Główne Procesy
 
 #### Migracja - sukces
 <p align="center">
@@ -201,9 +198,28 @@ Aby zasymulować działania użytkownika w systemie agent lokalny generuje warto
 
 Po zakończeniu generowania wartości, są one zapisane do pliku, aby można było z nich skorzystać podczas trenowania modelu przy kolejnym uruchomieniu agenta.
 
-### Agent globalny
+### Aktor globalny
+Główna idea i zasada działania aktora globalnego jest opisana w odpowiedniej sekcji Koncepcji.
+
+#### Migracja wszystkich maszyn w przypadku underprovisioningu
+W przypadku underprovisingu, wykonujemy migrację wszystkich maszyn jeśli to możliwe.
+Każda maszyna może zostać przypisana do nowego hypervisora na podstawie najbardziej używanego zasobu.  
+Nowy hypervisor wybierany jest jako best fit dla maszyny - taki, który ma najmniej lecz wystarczająco zasobów na potrzeby maszynki.  
+  
+Wykonywana jest symulacja migracji mając na celu stwierdzić czy przypadkiem nie dojdzie do kolejnego underprovisioningu lub overprovisiongu po wykonaniu migracji.  
+Jeśli można bezpiecznie przeprowadzić migrację, jest ona wykonywana.  
+#### Wybieranie najważniejszego zasobu
+Wybór najważniejszego zużywanego zasobu dokonywany jest poprzez procentowe wyliczenie zużywanego zasobu w stosunku do maksymalnego dostępnego.
 
 ### Wirtualne maszyny
+Aktor maszyny wirtualnej odpowiada za wykonywanie zleconych zadań oraz za migrację maszyn.
+
+#### Zachowanie
+##### Zlecenie zadania
+Zlecone zadanie dodawane jest do listy zadań, następnie podlega uruchomieniu.
+##### Migracja
+Aktor rozpoczyna migrację odłączając się od swojego hypervisora i przypisując się do nowego. W przypadku niepowodzenia odłączenia obecny hypervisor oznaczany jest hypervisor jako martwy.
+Przy porażce podłączania - następuje próba powrotu do starego hypervisora. Po drodze aktualizowany jest hypervisor maszyny w bazie.
 
 ### Hypervisor
 Aktor hypervisor-a odpowiada za zarządzanie podlegającymi mu maszynami wirtualnymi. W szczególności przydzielanie zasobów maszynom, które o to poproszą.
@@ -259,3 +275,8 @@ Hypervisor obsługuje wiadomości dotyczące posiadanych przez niego zasobów w�
 **3. AllocateResourcesMessage(vmId)**  
 **4. FreeResourcesMessage(vmId)**  
 **5. VmIsDeadMessage(vm, tasks)**  
+
+## Bibliografia
+1. Multi-Agent Based Dynamic Resource Provisioningand Monitoring In Cloud Computing Systems - 
+Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
+2. Energy Efficient Allocation of Virtual Machines in Cloud Data Centers - Anton Beloglazov and Rajkumar Buyya
