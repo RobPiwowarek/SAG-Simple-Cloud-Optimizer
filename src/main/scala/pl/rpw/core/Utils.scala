@@ -141,7 +141,7 @@ object Utils extends LazyLogging {
   }
 
   def globalUtility(actorSystem: ActorSystem) = {
-    Await.result(actorSystem.actorSelection("user/GUA").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+    Await.result(actorSystem.actorSelection("user/GUA").resolveOne(FiniteDuration(21, TimeUnit.SECONDS)), Duration.Inf)
   }
 
   def getActorRef(actorSystem: ActorSystem,

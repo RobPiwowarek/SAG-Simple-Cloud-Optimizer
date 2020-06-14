@@ -16,9 +16,9 @@ object HypervisorSelector extends LazyLogging {
     val ram = allHypervisors.map(_.ram).reduce(Integer.sum)
     val disk = allHypervisors.map(_.disk).reduce(Integer.sum)
 
-    val cpuExploitation = (cpu - availableCpu) / cpu
-    val ramExploitation = (ram - availableRam) / ram
-    val diskExploitation = (disk - availableDisk) / disk
+    val cpuExploitation = (cpu - availableCpu).toDouble / cpu
+    val ramExploitation = (ram - availableRam).toDouble / ram
+    val diskExploitation = (disk - availableDisk).toDouble / disk
 
     if (cpuExploitation >= ramExploitation && cpuExploitation >= diskExploitation) {
       ResourceType.CPU

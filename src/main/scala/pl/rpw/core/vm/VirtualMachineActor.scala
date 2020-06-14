@@ -22,13 +22,12 @@ class VirtualMachineActor(val id: String,
   extends Actor with LazyLogging {
 
   private val actorSystem = context.system
-  private val tasks = new mutable.HashSet[TaskSpecification]
+//  private val tasks = new mutable.HashSet[TaskSpecification]
   private val retryTime: Long = 10
 
   override def receive: Receive = {
     case TaskMessage(specification) =>
       logger.info(s"Virtual Machine $id received task specification: $specification")
-      tasks.add(specification)
       execute(specification)
 
     case MigrationMessage(newHypervisor) =>
@@ -116,7 +115,7 @@ class VirtualMachineActor(val id: String,
     VMRepository.update(vm)
   }
 
-  def freeResources(cpu: Int, ram: Int, disk: Int): Unit = {
+  def freeResources(cpu: Int, ram: Int, disk: Int): VM = {
     val vm = VMRepository.findById(id)
     vm.freeCpu += cpu
     vm.freeRam += ram
@@ -125,24 +124,19 @@ class VirtualMachineActor(val id: String,
       vm.state = VMState.IDLE.toString
     }
     VMRepository.update(vm)
+    vm
   }
 
   def execute(specification: TaskSpecification): Unit = {
     val vm = VMRepository.findById(id)
-    if (!vm.state.equals(VMState.ACTIVE.toString)) {
+    if (!vm.hasActivelyUsedResources) {
       requestMachinesResources(vm)
     }
     allocateResources(specification.cpu, specification.ram, specification.disk)
 
-    val task = new Runnable {
+    val finishTask = new Runnable {
       def run(): Unit = {
-        freeResources(specification.cpu, specification.ram, specification.disk)
-        sendTaskFinishedMessage(specification)
-
-        tasks.remove(specification)
-        if (tasks.isEmpty) {
-          freeMachinesResources(vm)
-        }
+        finishTaskExecution(specification)
       }
     }
 
@@ -150,8 +144,16 @@ class VirtualMachineActor(val id: String,
     implicit val executor = actorSystem.dispatcher
     scheduler.scheduleOnce(
       new FiniteDuration(specification.time, TimeUnit.SECONDS)) {
-      task.run()
+      finishTask.run()
     }
+  }
+
+  private def finishTaskExecution(specification: TaskSpecification) = {
+    val vm = freeResources(specification.cpu, specification.ram, specification.disk)
+    if (!vm.hasActivelyUsedResources) {
+      freeMachinesResources(vm)
+    }
+    sendTaskFinishedMessage(specification)
   }
 
   private def sendTaskFinishedMessage(specification: TaskSpecification): Unit = {
