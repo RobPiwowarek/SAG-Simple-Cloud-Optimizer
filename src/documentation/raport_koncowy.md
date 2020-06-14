@@ -139,7 +139,7 @@ Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
 #### Tworzenie zadania
 <p align="center">
   <img src = "./raport_koncowy_zdjecia/task-request.png"/>
-   <figcaption>Proces migracji</figcaption>
+   <figcaption>Proces tworzenia zadania</figcaption>
 </p>
 
 ### Agent lokalny
@@ -204,9 +204,39 @@ Po zakończeniu generowania wartości, są one zapisane do pliku, aby można by�
 ## 3. Protokoły
 
 ### Agent globalny
-
+Agent globalny obsługuje poniższe wiadomości:  
+  
+Dotyczące zadań:  
+**1. TaskRequestMessage(specification)**  
+**2. TaskFinishedMessage(taskId, userId)**  
+  
+Dotyczące maszyn wirutalnych:  
+**1. VirtualMachineRequestMassage(userId, specification)**  
+**2. OverprovisioningMessage(hypervisor)**  
+**3. UnderprovisioningMessage(hypervisor)**  
+**4. MigrationFailedMessage(vm)**  
+  
 ### Agent lokalny
+Agent lokalny obsługuje poniższe wiadomości:  
+  
+Dotyczące zadań:  
+**1. TaskGenerationRequestMessage()**  
+**2. TaskFinishedMessage(taskId, userId)**
+  
+Dotyczące maszyn wirtualnych:  
+**1. CreateVMMessage(specification)**  
+**2. VMCreated(id)**  
+**3. VmIsDeadMessage(vm, tasks)**  
 
 ### Wirtualna maszyna
-
+Aktor wirtualnej maszyny obsługuje jedynie zlecenia zadań i migracji  
+**1. TaskMessage(specification)**  
+**2. MigrationMessage(newHypervisor)**
+  
 ### Hypervisor
+Hypervisor obsługuje wiadomości dotyczące posiadanych przez niego zasobów włącznie z maszynami wirtualnymi:  
+**1. AttachVMMessage(vmId)**  
+**2.DetachVMMessage(vmId)**  
+**3. AllocateResourcesMessage(vmId)**  
+**4. FreeResourcesMessage(vmId)**  
+**5. VmIsDeadMessage(vm, tasks)**  
