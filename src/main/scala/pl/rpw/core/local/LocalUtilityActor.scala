@@ -5,11 +5,12 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 import akka.actor.Actor
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.spark.ml.regression.GBTRegressionModel
 import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{TaskFinishedMessage, TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
-import pl.rpw.core.local.message.{CreateVMMessage, TaskGenerationRequestMessage, VMCreated, VmIsDeadMessage}
+import pl.rpw.core.local.message.{CreateVMMessage, TaskCreationFailed, TaskGenerationRequestMessage, VMCreated, VmIsDeadMessage}
 import pl.rpw.core.persistance.task.TaskSpecification
 
 import scala.collection.mutable
@@ -20,7 +21,7 @@ class LocalUtilityActor(val id: String,
                         val diskAmplitude: Double,
                         val timeAmplitude: Double,
                         val taskGenerationPeriod: Int
-                       ) extends Actor {
+                       ) extends Actor with LazyLogging {
   val actorSystem = context.system
 
   var tasks = new mutable.HashMap[String, TaskSpecification]()
@@ -59,11 +60,13 @@ class LocalUtilityActor(val id: String,
       val predictedRam = LocalUtilityHelper.predict(modelRam, usageHistoryRam).toInt / vms.size
       val predictedDisk = LocalUtilityHelper.predict(modelDisk, usageHistoryDisk).toInt / vms.size
 
-      new VirtualMachineSpecification(
+      val adjusted = new VirtualMachineSpecification(
         if (predictedCpu == 0) specification.cpu else math.abs(predictedCpu - specification.cpu) / 2,
         if (predictedRam == 0) specification.ram else math.abs(predictedRam - specification.ram) / 2,
         if (predictedDisk == 0) specification.disk else math.abs(predictedDisk - specification.disk) / 2
       )
+      logger.info(s"Adjusted spec on $id: $adjusted. Requested $specification")
+      adjusted
     }
   }
 
@@ -104,14 +107,14 @@ class LocalUtilityActor(val id: String,
         updateModels()
       }
 
-      println(s"""Local agent $id sending $specification to Global Utility Actor""")
+      logger.info(s"""Local agent $id sending $specification to Global Utility Actor""")
       val adjustedSpecification = adjustSpecification(specification)
       val globalRef = Utils.globalUtility(actorSystem)
       globalRef ! VirtualMachineRequestMassage(id, adjustedSpecification)
 
     case TaskGenerationRequestMessage() =>
       if (vms.nonEmpty) {
-        println(s"""Local agent $id is generating task...""")
+        logger.info(s"""Local agent $id is generating task...""")
         val specification = generateTask()
         tasks.put(specification.taskId, specification)
         increaseUsage(specification)
@@ -120,7 +123,15 @@ class LocalUtilityActor(val id: String,
       }
 
     case TaskFinishedMessage(taskId, userId) =>
-      println(s"""Task $taskId was finished""")
+      logger.info(s"""Task $taskId was finished""")
+      val specification = tasks.get(taskId)
+      specification.map(_ => {
+        decreaseUsage(_)
+        tasks.remove(taskId)
+      })
+
+    case TaskCreationFailed(taskId) =>
+      logger.info(s"""Task $taskId could not be executed or enqueued""")
       val specification = tasks.get(taskId)
       specification.map(_ => {
         decreaseUsage(_)
@@ -128,11 +139,11 @@ class LocalUtilityActor(val id: String,
       })
 
     case VMCreated(id) =>
-      println(s"""VM $id requested by local agent ${this.id} was created""")
+      logger.info(s"""VM $id requested by local agent ${this.id} was created""")
       vms.add(id)
 
     case VmIsDeadMessage(vm, tasks) =>
-      println(s"""VM $id was found dead""")
+      logger.info(s"""VM $id was found dead""")
       vms.remove(vm)
       tasks.foreach(task => {
         val specification = this.tasks.get(task)

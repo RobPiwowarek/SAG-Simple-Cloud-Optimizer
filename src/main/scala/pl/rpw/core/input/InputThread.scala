@@ -2,7 +2,7 @@ package pl.rpw.core.input
 
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorRef, ActorSystem, Props}
+import akka.actor.{ActorRef, ActorSystem, Kill, Props}
 import akka.util.Timeout
 import pl.rpw.core.MainApp.system
 import pl.rpw.core.global.GlobalUtilityActor
@@ -128,7 +128,8 @@ class InputThread(actorSystem: ActorSystem,
       } { ref => {
         println("Stopping: " + ref)
         actors.remove(data)
-        actorSystem.stop(ref)
+//        actorSystem.stop(ref)
+        ref ! Kill
       }
       }
   }

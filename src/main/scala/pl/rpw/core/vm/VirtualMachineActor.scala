@@ -3,6 +3,7 @@ package pl.rpw.core.vm
 import java.util.concurrent.TimeUnit
 
 import akka.actor.{Actor, ActorSystem}
+import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{MigrationFailedMessage, TaskFinishedMessage}
 import pl.rpw.core.hipervisor.message._
@@ -18,7 +19,7 @@ class VirtualMachineActor(val id: String,
                           val cpu: Int,
                           val memory: Int,
                           val diskSpace: Int)
-  extends Actor {
+  extends Actor with LazyLogging {
 
   private val actorSystem = context.system
   private val tasks = new mutable.HashSet[TaskSpecification]
@@ -26,15 +27,12 @@ class VirtualMachineActor(val id: String,
 
   override def receive: Receive = {
     case TaskMessage(specification) =>
-      print("Virtual Machine " + id + " ")
-      println("Received task specification: " + specification)
+      logger.info(s"Virtual Machine $id received task specification: $specification")
       tasks.add(specification)
       execute(specification)
 
     case MigrationMessage(newHypervisor) =>
-      print("Virtual Machine " + id + " ")
-      println("Received migration order: " + newHypervisor)
-      val actorSystem = ActorSystem()
+      logger.info(s"Virtual Machine $id received migration order: $newHypervisor")
       val vm = VMRepository.findById(id)
       val oldHypervisor = vm.hypervisor.orNull
       startMigration(vm, oldHypervisor, actorSystem)
@@ -47,7 +45,7 @@ class VirtualMachineActor(val id: String,
       globalUtilityActor ! MigrationFailedMessage(id)
     } catch {
       case exception: Throwable =>
-        println(s"Exception occured when awaiting for resolving GUA in VM $id: ${exception.getMessage}")
+        logger.error(s"Exception occured when awaiting for resolving GUA in VM $id: ${exception.getMessage}")
         val scheduler = actorSystem.scheduler
         implicit val executor = actorSystem.dispatcher
         scheduler.scheduleOnce(
@@ -68,7 +66,7 @@ class VirtualMachineActor(val id: String,
       hypervisor ! AttachVMMessage(this.id)
     } catch {
       case exception: Throwable =>
-        println(s"Exception occured when awaiting for resolving of hypervisor ${oldHypervisor} in VM ${vm.id}: ${exception.getMessage}")
+        logger.error(s"Exception occured when awaiting for resolving of hypervisor ${oldHypervisor} in VM ${vm.id}: ${exception.getMessage}")
         vm.hypervisor = null
         VMRepository.update(vm)
         Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(oldHypervisor), actorSystem)
@@ -85,7 +83,10 @@ class VirtualMachineActor(val id: String,
       destHypervisor ! AttachVMMessage(this.id)
     } catch {
       case exception: Throwable =>
-        println(s"Exception occured when awaiting for resolving of hypervisor ${vm.hypervisor} in VM ${vm.id}: ${exception.getMessage}")
+        logger.error(s"Exception occured when awaiting for resolving of hypervisor ${newHypervisor} in VM ${vm.id}: ${exception.getMessage}")
+        vm.hypervisor = None
+        VMRepository.update(vm)
+        Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(newHypervisor), actorSystem)
         reattachToOldHypervisor(oldHypervisor)
     }
   }
@@ -94,13 +95,15 @@ class VirtualMachineActor(val id: String,
     vm.state = VMState.MIGRATING.toString
     vm.hypervisor = None
     VMRepository.update(vm)
-    try {
-      val hypervisor = Utils.getActorRef(actorSystem, oldHypervisor)
-      hypervisor ! DetachVMMessage(this.id)
-    } catch {
-      case exception: Throwable =>
-        println(s"Exception occured when awaiting for resolving of hypervisor ${oldHypervisor} in VM ${vm.id}: ${exception.getMessage}")
-        Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(oldHypervisor), actorSystem)
+    if (oldHypervisor != null) {
+      try {
+        val hypervisor = Utils.getActorRef(actorSystem, oldHypervisor)
+        hypervisor ! DetachVMMessage(this.id)
+      } catch {
+        case exception: Throwable =>
+          logger.error(s"Exception occured when awaiting for resolving of hypervisor ${oldHypervisor} in VM ${vm.id}: ${exception.getMessage}")
+          Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(oldHypervisor), actorSystem)
+      }
     }
   }
 
@@ -157,7 +160,7 @@ class VirtualMachineActor(val id: String,
       globalUtilityActor ! TaskFinishedMessage(specification.taskId, specification.userId)
     } catch {
       case exception: Throwable =>
-        println(s"Exception occured when awaiting for resolving GUA in VM $id: ${exception.getMessage}")
+        logger.error(s"Exception occured when awaiting for resolving GUA in VM $id: ${exception.getMessage}")
         val scheduler = actorSystem.scheduler
         implicit val executor = actorSystem.dispatcher
         scheduler.scheduleOnce(
@@ -175,7 +178,7 @@ class VirtualMachineActor(val id: String,
       hypervisor ! FreeResourcesMessage(id)
     } catch {
       case exception: Throwable =>
-        println(s"Exception occured when awaiting for resolving of hypervisor ${vm.hypervisor} in VM ${vm.id}: ${exception.getMessage}")
+        logger.error(s"Exception occured when awaiting for resolving of hypervisor ${vm.hypervisor.orNull} in VM ${vm.id}: ${exception.getMessage}")
         Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(vm.hypervisor.orNull), actorSystem)
     }
 
@@ -187,7 +190,7 @@ class VirtualMachineActor(val id: String,
       hypervisor ! AllocateResourcesMessage(id)
     } catch {
       case exception: Throwable =>
-        println(s"Exception occured when awaiting for resolving of hypervisor ${vm.hypervisor} in VM ${vm.id}: ${exception.getMessage}")
+        logger.error(s"Exception occured when awaiting for resolving of hypervisor ${vm.hypervisor.orNull} in VM ${vm.id}: ${exception.getMessage}")
         Utils.markHypervisorAsDeadRecursively(HypervisorRepository.findById(vm.hypervisor.orNull), actorSystem)
     }
   }

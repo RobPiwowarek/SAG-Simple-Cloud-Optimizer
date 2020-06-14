@@ -3,6 +3,7 @@ package pl.rpw.core
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.local.message.VmIsDeadMessage
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
@@ -12,7 +13,7 @@ import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
-object Utils {
+object Utils extends LazyLogging {
   def getVmOrderingFunctionForMigration(resource: ResourceType.Value): (VM, VM) => Boolean = {
     if (resource == ResourceType.CPU) {
       (vm1: VM, vm2: VM) => compareCpu(vm1, vm2)
@@ -46,37 +47,61 @@ object Utils {
   def calculateCpuImportance(specification: VirtualMachineSpecification,
                              allHypervisors: Seq[Hypervisor]) = {
     val availableCpu = allHypervisors.map(_.freeCpu).reduce(Integer.sum)
-    specification.cpu / availableCpu
+    if (availableCpu != 0) {
+      specification.cpu.toDouble / availableCpu
+    } else {
+      Double.MaxValue
+    }
   }
 
   def calculateRamImportance(specification: VirtualMachineSpecification,
                              allHypervisors: Seq[Hypervisor]) = {
     val availableRam = allHypervisors.map(_.freeRam).reduce(Integer.sum)
-    specification.ram / availableRam
+    if (availableRam != 0) {
+      specification.ram.toDouble / availableRam
+    } else {
+      Double.MaxValue
+    }
   }
 
   def calculateDiskImportance(specification: VirtualMachineSpecification,
                               allHypervisors: Seq[Hypervisor]) = {
     val availableDisk = allHypervisors.map(_.freeDisk).reduce(Integer.sum)
-    specification.disk / availableDisk
+    if (availableDisk != 0) {
+      specification.disk.toDouble / availableDisk
+    } else {
+      Double.MaxValue
+    }
   }
 
   def calculateCpuImportance(specification: TaskSpecification,
                              allVms: Seq[VM]) = {
     val availableCpu = allVms.map(_.freeCpu).reduce(Integer.sum)
-    specification.cpu / availableCpu
+    if (availableCpu != 0) {
+      specification.cpu.toDouble / availableCpu
+    } else {
+      Double.MaxValue
+    }
   }
 
   def calculateRamImportance(specification: TaskSpecification,
                              allVms: Seq[VM]) = {
     val availableRam = allVms.map(_.freeRam).reduce(Integer.sum)
-    specification.ram / availableRam
+    if (availableRam != 0) {
+      specification.ram.toDouble / availableRam
+    } else {
+      Double.MaxValue
+    }
   }
 
   def calculateDiskImportance(specification: TaskSpecification,
                               allVms: Seq[VM]) = {
     val availableDisk = allVms.map(_.freeDisk).reduce(Integer.sum)
-    specification.disk / availableDisk
+    if (availableDisk != 0) {
+      specification.disk.toDouble / availableDisk
+    } else {
+      Double.MaxValue
+    }
   }
 
   private def compareCpu(vm1: VM, vm2: VM): Boolean = {
@@ -121,7 +146,7 @@ object Utils {
 
   def getActorRef(actorSystem: ActorSystem,
                   path: String) = {
-    Await.result(actorSystem.actorSelection(s"user/$path").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
+    Await.result(actorSystem.actorSelection(s"user/$path").resolveOne(FiniteDuration(10, TimeUnit.SECONDS)), Duration.Inf)
   }
 
   def markAllMachinesAsDeadAdNotifyOwners(hypervisor: Hypervisor,
@@ -144,13 +169,15 @@ object Utils {
       val userRef = Utils.getActorRef(actorSystem, vm.user)
       userRef ! VmIsDeadMessage(vm.id, tasks)
     } catch {
-      case exception: Throwable => println(s"Could not find actor for userId: ${vm.user}: ${exception.getMessage}")
+      case exception: Throwable =>
+        logger.error(s"Could not find actor for userId: ${vm.user}: ${exception.getMessage}")
     }
     try {
       val hypervisorRef = Utils.getActorRef(actorSystem, vm.hypervisor.orNull)
       hypervisorRef ! VmIsDeadMessage(vm.id, tasks)
     } catch {
-      case exception: Throwable => println(s"Could not find actor for hypervisor: ${vm.hypervisor.orNull}: ${exception.getMessage}")
+      case exception: Throwable =>
+        logger.error(s"Could not find actor for hypervisor: ${vm.hypervisor.orNull}: ${exception.getMessage}")
     }
   }
 

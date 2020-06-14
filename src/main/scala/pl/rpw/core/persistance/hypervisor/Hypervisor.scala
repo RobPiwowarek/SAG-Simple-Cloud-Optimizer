@@ -26,10 +26,18 @@ final case class Hypervisor(id: String,
     }
   }
 
+  def currentUsage = {
+    val cpuUsage: Double = (cpu - freeCpu).toDouble / cpu
+    val memoryUsage: Double = (ram - freeRam).toDouble / ram
+    val diskUsage: Double = (disk - freeDisk).toDouble / disk
+
+    s"cpu = $cpuUsage, ram = $memoryUsage, disk = $diskUsage"
+  }
+
   def isUnderprovisioning: Boolean = {
-    val cpuUsage = (cpu - freeCpu) / cpu
-    val memoryUsage = (ram - freeRam) / ram
-    val diskUsage = (disk - freeDisk) / disk
+    val cpuUsage: Double = (cpu - freeCpu).toDouble / cpu
+    val memoryUsage: Double = (ram - freeRam).toDouble / ram
+    val diskUsage: Double = (disk - freeDisk).toDouble / disk
 
     cpuUsage < Consts.underprovisioningThreshold ||
       memoryUsage < Consts.underprovisioningThreshold ||
@@ -37,9 +45,9 @@ final case class Hypervisor(id: String,
   }
 
   def isOverprovisioning: Boolean = {
-    val cpuUsage = (cpu - freeCpu) / cpu
-    val memoryUsage = (ram - freeRam) / ram
-    val diskUsage = (disk - freeDisk) / disk
+    val cpuUsage: Double = (cpu - freeCpu).toDouble / cpu
+    val memoryUsage: Double = (ram - freeRam).toDouble / ram
+    val diskUsage: Double = (disk - freeDisk).toDouble / disk
 
     cpuUsage > Consts.overprovisioningThreshold ||
       memoryUsage > Consts.overprovisioningThreshold ||

@@ -4,6 +4,7 @@ import akka.actor.{Actor, ActorRef, Props}
 import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.global.message._
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
+import pl.rpw.core.local.message.TaskCreationFailed
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
 import pl.rpw.core.persistance.task.{TaskSpecification, TaskSpecificationsRepository}
 import pl.rpw.core.persistance.vm.{VM, VMRepository, VMState}
@@ -48,7 +49,13 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       vm match {
         case Consts.EmptyVM =>
           logger.info(s"Empty VM returned for Task Request Message with specification $specification")
-          TaskSpecificationsRepository.insert(specification.toEntity)
+          val candidateVms = VMRepository.findByUser(specification.userId).filter(_.couldExecuteTask(specification))
+          if (candidateVms.nonEmpty) {
+            TaskSpecificationsRepository.insert(specification.toEntity)
+          } else {
+            logger.error(s"No VM can execute $specification")
+            sender() ! TaskCreationFailed(specification.taskId)
+          }
         case vm =>
           try {
             val vmRef = Utils.getActorRef(actorSystem, vm.id)
@@ -85,7 +92,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
         val vm = VMSelector.selectVM(userId, task.toSpec)
         vm match {
           case Consts.EmptyVM =>
-            println(s"No vm for $task")
+            logger.error(s"No vm for $task")
           case anyVm =>
             task.vm = Some(anyVm.id)
             try {
@@ -96,8 +103,8 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
               case exception: Throwable =>
                 logger.error(s"Exception occured when awaiting for resolving of vm ${vm.id} and task ${task.taskId} in GUA: ${exception.getMessage}")
                 Utils.markMachineAsDeadAndNotifyOwner(vm, actorSystem)
-                // fixme do insert-or-update in message handler
-                // and send message
+              // fixme do insert-or-update in message handler
+              // and send message
             }
         }
       }
@@ -106,7 +113,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       logger.info("Migration failed from: " + vm)
       val vmEntity = VMRepository.findById(vm)
       val newHypervisor = HypervisorSelector.selectHypervisor(new VirtualMachineSpecification(vmEntity.cpu, vmEntity.ram, vmEntity.disk))
-      if (newHypervisor == null) {
+      if (newHypervisor == Consts.EmptyHypervisor) {
         logger.error(s"Migration impossible for vm $vm")
         Utils.markMachineAsDeadAndNotifyOwner(vmEntity, actorSystem)
       } else {
@@ -187,13 +194,14 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
 
     val mostExploitedResource = HypervisorSelector.selectMostExploitedResource(HypervisorRepository.findAll())
     val migrationSimulation: Seq[(VM, Hypervisor)] = vms
+      .filter(_.state.equals(VMState.ACTIVE.toString))
       .sortWith(Utils.getVmOrderingFunctionForMigration(mostExploitedResource))
       .map(vm => {
         HypervisorSelector.selectDestinationHypervisorFrom(vm.toSpecs, activeHypervisors, mostExploitedResource) match {
           case Consts.EmptyHypervisor =>
             HypervisorSelector.selectDestinationHypervisorFrom(vm.toSpecs, idleHypervisors, mostExploitedResource) match {
               case Consts.EmptyHypervisor =>
-                println("Migration of machines on " + hypervisor + " not possible")
+                logger.info("Migration of machines on " + hypervisor + " not possible")
                 return
               case idleHypervisor =>
                 claimResources(vm, idleHypervisor)
@@ -203,7 +211,12 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
         }
       })
 
-    migrateIfPossible(hypervisor, migrationSimulation)
+    if (migrationSimulation.nonEmpty) {
+      logger.debug(s"Simulation is: \n${migrationSimulation.map(tuple => s"${tuple._1} -> ${tuple._2}").reduce((s1, s2) => s"$s1\n$s2")}")
+      migrateIfPossible(hypervisor, migrationSimulation)
+    } else {
+      logger.info("Migration of machines on " + hypervisor.id + " not valid")
+    }
   }
 
   private def migrateIfPossible(hypervisor: Hypervisor,
@@ -219,14 +232,17 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
         }
       }
     } else {
-      println("Migration of machines on " + hypervisor.id + " not valid")
+      logger.info("Migration of machines on " + hypervisor.id + " not valid. Overprovisioning or underprovisioning")
     }
 
   private def doesItMakeSenseToPerformThisMigration(migrationSimulation: Seq[(VM, Hypervisor)]) = {
-    migrationSimulation.map {
-      case (_, hypervisor: Hypervisor) if hypervisor.isOverprovisioning || hypervisor.isUnderprovisioning => false
-      case _ => true
-    }.reduce((x, y) => x && y)
+    migrationSimulation
+      .foreach(e => logger.debug(s"Usage of ${e._2.id}: ${e._2.currentUsage}"))
+    migrationSimulation
+      .map {
+        case (_, hypervisor: Hypervisor) if hypervisor.isOverprovisioning || hypervisor.isUnderprovisioning => false
+        case _ => true
+      }.reduce((x, y) => x && y)
   }
 
   private def claimResources(vm: VM,

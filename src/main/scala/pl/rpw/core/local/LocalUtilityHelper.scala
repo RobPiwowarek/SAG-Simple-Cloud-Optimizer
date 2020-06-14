@@ -3,6 +3,7 @@ package pl.rpw.core.local
 import java.io.{File, FileWriter}
 import java.time.LocalDateTime
 
+import com.typesafe.scalalogging.LazyLogging
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.spark.ml.feature.VectorAssembler
 import org.apache.spark.ml.regression.{GBTRegressionModel, GBTRegressor}
@@ -12,7 +13,7 @@ import org.apache.spark.{SparkContext, sql}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-object LocalUtilityHelper {
+object LocalUtilityHelper extends LazyLogging {
 
   //creating Spark object
   private[this] val spark = SparkSession.builder().master("local[*]").getOrCreate()
@@ -21,6 +22,10 @@ object LocalUtilityHelper {
   val sqlContext: SQLContext = spark.sqlContext
 
   val trainingSetSize = 50
+
+  def init = {
+    logger.info("Initializing Spark session finished")
+  }
 
   /**
    * pipeline for creating new GBT model
