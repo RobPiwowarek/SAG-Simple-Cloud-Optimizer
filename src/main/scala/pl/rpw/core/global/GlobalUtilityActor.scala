@@ -1,6 +1,6 @@
 package pl.rpw.core.global
 
-import akka.actor.{Actor, ActorRef, PoisonPill, Props}
+import akka.actor.{Actor, ActorRef, Kill, PoisonPill, Props}
 import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.global.message._
 import pl.rpw.core.hipervisor.message.{AttachVMMessage, VirtualMachineSpecification}
@@ -116,7 +116,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       if (newHypervisor == Consts.EmptyHypervisor) {
         logger.error(s"Migration impossible for vm $vm")
         Utils.markMachineAsDeadAndNotifyOwner(vmEntity, actorSystem)
-        sender() ! PoisonPill
+        sender() ! Kill
       } else {
         try {
           val vmRef = Utils.getActorRef(actorSystem, vm)

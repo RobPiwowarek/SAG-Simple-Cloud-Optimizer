@@ -172,9 +172,7 @@ class VirtualMachineActor(val id: String,
         implicit val executor = actorSystem.dispatcher
         scheduler.scheduleOnce(
           new FiniteDuration(retryTime, TimeUnit.SECONDS)) {
-          new Runnable {
-            override def run(): Unit = sendTaskFinishedMessage(specification)
-          }
+          sendTaskFinishedMessage(specification)
         }
     }
   }
