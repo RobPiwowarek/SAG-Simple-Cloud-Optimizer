@@ -164,9 +164,9 @@ class LocalUtilityActor(val id: String,
       UUID.randomUUID().toString,
       id,
       (timeAmplitude * math.abs(math.sin(timestamp))).toInt + 1, // to avoid 0 time
-      (cpuAmplitude * math.abs(math.sin(timestamp))).toInt,
-      (ramAmplitude * math.abs(math.sin(timestamp))).toInt,
-      (diskAmplitude * math.abs(math.sin(timestamp))).toInt
+      (cpuAmplitude * math.abs(math.sin(timestamp))).toInt + 1,
+      (ramAmplitude * math.abs(math.sin(timestamp))).toInt + 1,
+      (diskAmplitude * math.abs(math.sin(timestamp))).toInt + 1
     )
   }
 
