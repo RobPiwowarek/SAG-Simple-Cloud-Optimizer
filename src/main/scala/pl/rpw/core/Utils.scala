@@ -146,7 +146,7 @@ object Utils extends LazyLogging {
 
   def getActorRef(actorSystem: ActorSystem,
                   path: String) = {
-    Await.result(actorSystem.actorSelection(s"user/$path").resolveOne(FiniteDuration(10, TimeUnit.SECONDS)), Duration.Inf)
+    Await.result(actorSystem.actorSelection(s"user/$path").resolveOne(FiniteDuration(20, TimeUnit.SECONDS)), Duration.Inf)
   }
 
   def markAllMachinesAsDeadAdNotifyOwners(hypervisor: Hypervisor,
