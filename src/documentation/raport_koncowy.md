@@ -204,14 +204,19 @@ Po zakończeniu generowania wartości, są one zapisane do pliku, aby można by�
 Główna idea i zasada działania aktora globalnego jest opisana w odpowiedniej sekcji Koncepcji.
 
 #### Migracja wszystkich maszyn wirtualnych w przypadku underprovisioningu
-W przypadku underprovisingu, wykonujemy migrację wszystkich maszyn jeśli to możliwe.
-Każda maszyna może zostać przypisana do nowego hypervisora na podstawie najbardziej używanego zasobu.  
-Nowy hypervisor wybierany jest jako best fit dla maszyny - taki, który ma najmniej lecz wystarczająco zasobów na potrzeby maszyny.  
-  
+W przypadku underprovisingu, wykonujemy migrację wszystkich maszyn, jeśli to możliwe i korzystne dla systemu 
+(korzyścią jest minimalizaja liczby aktywnych hipervisor'ów, a zatem zużycia energii).
+
+Kolekcję wszystkich aktywnych maszyn wirtualnych podlegających pod danego hipervisor'a sortujemy według zapotrzebowania
+na zasób najbardziej znaczący dla systemu. Następnie dla każdej maszyny po kolei dobieramy 
+nowy hypervisor według kryterium MaxMin (wybieramy zasób o maksymalnym znaczeniu dla maszyny i znajdujemy hipervisor 
+który posiada go najmniej ale jest w stanie pomieścić maszynę wirtualną). Tworzymy w ten sposób symulację migracji, aby
+następnie sprawdzić, czy jest ona korzystna dla systemu.
+
 Wykonywana jest symulacja migracji mając na celu stwierdzić czy przypadkiem nie dojdzie do kolejnego underprovisioningu lub overprovisiongu po wykonaniu migracji.  
 Jeśli można bezpiecznie przeprowadzić migrację, jest ona wykonywana.  
 #### Wybieranie najważniejszego zasobu
-Wybór najważniejszego zużycia zasobu dokonywany jest poprzez procentowe wyliczenie zużywanego zasobu w stosunku do maksymalnego dostępnego.
+Wybór najważniejszego zużycia zasobu dokonywany jest poprzez procentowe wyliczenie zużycia zasobu w stosunku do maksymalnej ilości.
 
 ### Wirtualne maszyny
 Aktor maszyny wirtualnej odpowiada za wykonywanie zleconych zadań oraz za migrację do wskazanego hypervisora.
