@@ -146,7 +146,7 @@ Wymieniane są następujące komunikaty:
 </p>
 
 ### Agent lokalny
-Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta, przewidywanie ich zużycia w chwili *t+1* i informowanie o tym **agenta globalnego**. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje wartości funkcji *sin* od *t* i próbuje przewidzieć wartość tej funkcji w chwili *t+1*. Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
+Celem agenta lokalnego jest obserwowanie zużycia zasobów przez klienta, przewidywanie ich zużycia w chwili *t+1* i informowanie o tym **agenta globalnego**. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje nowe zadania (ze zużyciami zasobów bazującymi na przewidywaniach modelu). Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
 
 #### Kroki podejmowane przez agenta lokalnego w celu przewidzenia zużycia zasobów:
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
