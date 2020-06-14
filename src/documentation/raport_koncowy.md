@@ -207,9 +207,12 @@ Kolekcję wszystkich aktywnych maszyn wirtualnych podlegających pod danego hipe
 na zasób najbardziej znaczący dla systemu. Następnie dla każdej maszyny po kolei dobieramy 
 nowy hypervisor według kryterium MaxMin (wybieramy zasób o maksymalnym znaczeniu dla maszyny i znajdujemy hipervisor 
 który posiada go najmniej ale jest w stanie pomieścić maszynę wirtualną). Tworzymy w ten sposób symulację migracji, aby
-następnie sprawdzić, czy jest ona korzystna dla systemu.
+następnie sprawdzić, czy jest ona korzystna dla systemu. 
 
-Wykonywana jest symulacja migracji mając na celu stwierdzić czy przypadkiem nie dojdzie do kolejnego underprovisioningu lub overprovisiongu po wykonaniu migracji.  
+Rozwiązanie problemu znalezienia odpowiedniej migracji jest podobne do proponowanych rozwiązań 
+problemu "bin packing". [3]
+
+Wykonywana jest symulacja migracji mająca na celu stwierdzić czy przypadkiem nie dojdzie do kolejnego underprovisioningu lub overprovisiongu po wykonaniu migracji.  
 Jeśli można bezpiecznie przeprowadzić migrację, jest ona wykonywana.  
 #### Wybieranie najważniejszego zasobu
 Wybór najważniejszego zużycia zasobu dokonywany jest poprzez procentowe wyliczenie zużycia zasobu w stosunku do maksymalnej ilości.
@@ -295,3 +298,4 @@ W przypadku gdy lokalny aktor nie odpowiada nie jest podejmowane żadne dodatkow
 1. Multi-Agent Based Dynamic Resource Provisioningand Monitoring In Cloud Computing Systems - 
 Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
 2. Energy Efficient Allocation of Virtual Machines in Cloud Data Centers - Anton Beloglazov and Rajkumar Buyya
+3. Bin packing problem (https://en.wikipedia.org/wiki/Bin_packing_problem, 15-06-2020)
