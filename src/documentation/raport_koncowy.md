@@ -201,25 +201,25 @@ Po zakończeniu generowania wartości, są one zapisane do pliku, aby można by�
 ### Aktor globalny
 Główna idea i zasada działania aktora globalnego jest opisana w odpowiedniej sekcji Koncepcji.
 
-#### Migracja wszystkich maszyn w przypadku underprovisioningu
+#### Migracja wszystkich maszyn wirtualnych w przypadku underprovisioningu
 W przypadku underprovisingu, wykonujemy migrację wszystkich maszyn jeśli to możliwe.
 Każda maszyna może zostać przypisana do nowego hypervisora na podstawie najbardziej używanego zasobu.  
-Nowy hypervisor wybierany jest jako best fit dla maszyny - taki, który ma najmniej lecz wystarczająco zasobów na potrzeby maszynki.  
+Nowy hypervisor wybierany jest jako best fit dla maszyny - taki, który ma najmniej lecz wystarczająco zasobów na potrzeby maszyny.  
   
 Wykonywana jest symulacja migracji mając na celu stwierdzić czy przypadkiem nie dojdzie do kolejnego underprovisioningu lub overprovisiongu po wykonaniu migracji.  
 Jeśli można bezpiecznie przeprowadzić migrację, jest ona wykonywana.  
 #### Wybieranie najważniejszego zasobu
-Wybór najważniejszego zużywanego zasobu dokonywany jest poprzez procentowe wyliczenie zużywanego zasobu w stosunku do maksymalnego dostępnego.
+Wybór najważniejszego zużycia zasobu dokonywany jest poprzez procentowe wyliczenie zużywanego zasobu w stosunku do maksymalnego dostępnego.
 
 ### Wirtualne maszyny
-Aktor maszyny wirtualnej odpowiada za wykonywanie zleconych zadań oraz za migrację maszyn.
+Aktor maszyny wirtualnej odpowiada za wykonywanie zleconych zadań oraz za migrację do wskazanego hypervisora.
 
 #### Zachowanie
 ##### Zlecenie zadania
-Zlecone zadanie dodawane jest do listy zadań, następnie podlega uruchomieniu.
+Zlecone zadanie zajmuje zasoby, następnie podlega uruchomieniu, a po skończeniu zwalnia zasoby.
 ##### Migracja
-Aktor rozpoczyna migrację odłączając się od swojego hypervisora i przypisując się do nowego. W przypadku niepowodzenia odłączenia obecny hypervisor oznaczany jest hypervisor jako martwy.
-Przy porażce podłączania - następuje próba powrotu do starego hypervisora. Po drodze aktualizowany jest hypervisor maszyny w bazie.
+Aktor rozpoczyna migrację odłączając się od swojego hypervisora i przypisując się do nowego. W przypadku niepowodzenia odłączenia obecny hypervisor oznaczany jest jako martwy.
+Przy porażce podłączania - następuje próba powrotu do starego hypervisora.
 
 ### Hypervisor
 Aktor hypervisor-a odpowiada za zarządzanie podlegającymi mu maszynami wirtualnymi. W szczególności przydzielanie zasobów maszynom, które o to poproszą.
@@ -229,13 +229,13 @@ Aktor hypervisor-a odpowiada za zarządzanie podlegającymi mu maszynami wirtual
 Aktor sprawdza zapisany stan maszyny w bazie danych. Jeśli ma status CREATED informuje lokalnego agenta o stworzeniu maszyny.  
 W zależności od tego czy maszyna ma aktywnie wykorzystywane zasoby ustawia jej odpowiedni status ACTIVE lub IDLE i zapisuje w bazie.
 ##### Odłączanie maszyny
-Aktor zwalnia zasoby wykorzystywane przez maszynę.
+Aktor zwalnia zasoby wykorzystywane przez maszynę jeżeli były wykorzystywane.
 ##### Alokacja zasobów
 Aktor alokuje zasoby dla danej maszyny wirtualnej.
 ##### Zwolnienie zasobów
 Aktor zwalnia zasoby dla danej maszyny wirtualnej.
 ##### Martwa maszyna
-Aktor zwalnia zasoby dla zmarłej maszyny wirtualnej.
+Aktor zwalnia zasoby dla zmarłej maszyny wirtualnej jeżeli były wykorzystywane.
 ## 3. Protokoły
 
 ### Agent globalny
@@ -271,7 +271,7 @@ Aktor wirtualnej maszyny obsługuje jedynie zlecenia zadań i migracji
 ### Hypervisor
 Hypervisor obsługuje wiadomości dotyczące posiadanych przez niego zasobów włącznie z maszynami wirtualnymi:  
 **1. AttachVMMessage(vmId)**  
-**2.DetachVMMessage(vmId)**  
+**2. DetachVMMessage(vmId)**  
 **3. AllocateResourcesMessage(vmId)**  
 **4. FreeResourcesMessage(vmId)**  
 **5. VmIsDeadMessage(vm, tasks)**  
