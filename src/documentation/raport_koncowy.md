@@ -276,6 +276,18 @@ Hypervisor obsługuje wiadomości dotyczące posiadanych przez niego zasobów w�
 **4. FreeResourcesMessage(vmId)**  
 **5. VmIsDeadMessage(vm, tasks)**  
 
+## Sytuacje wyjątkowe
+
+### Wykryto, że maszyna wirtualna nie odpowiada
+W sytuacjach gdy maszyna wirtualna nie odpowiada oznaczana jest jako martwa i usuwamy zadania, które na niej były. Następnie wysyłamy stosowny komunikat
+do lokalnego agenta żeby mógł zmniejszyć zasoby i odznaczyć sobie, że maszyna nie działa. Wysyłamy wiadomość do hypervisor-a żeby zwolnił sobie zasoby.
+### Wykryto, że hypervisor nie odpowiada
+W przypadku nie działania hypervisor-a ustawiamy jego maszyny wirtualne jako martwe i wykonujemy operacje opisane powyżej.
+### Wykryto, że globalny aktor nie odpowiada
+Gdy globalny agent nie odpowiada, żądania do niego są powtarzane do skutku w oczekiwaniu na uruchomienie go ponownie.
+### Wykryto, że lokalny aktor nie odpowiada
+W przypadku gdy lokalny aktor nie odpowiada nie jest podejmowane żadne dodatkowe działanie.
+
 ## Bibliografia
 1. Multi-Agent Based Dynamic Resource Provisioningand Monitoring In Cloud Computing Systems - 
 Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
