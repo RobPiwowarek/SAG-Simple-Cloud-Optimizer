@@ -122,6 +122,12 @@ Mahmoud Al-Ayyoub, Mustafa Daraghmeh, Yaser Jararweh and Qutaibah Althebyan
 
 ## 2. Implementacja
 
+### Architektura
+<p align="center">
+  <img src = "./raport_koncowy_zdjecia/architektura.png"/>
+   <figcaption>Architektura systemu</figcaption>
+</p>
+
 ### Glówne Procesy
 
 #### Migracja - sukces
@@ -200,7 +206,20 @@ Po zakończeniu generowania wartości, są one zapisane do pliku, aby można by�
 ### Wirtualne maszyny
 
 ### Hypervisor
+Aktor hypervisor-a odpowiada za zarządzanie podlegającymi mu maszynami wirtualnymi. W szczególności przydzielanie zasobów maszynom, które o to poproszą.
 
+#### Zachowanie
+##### Dołączanie maszyny
+Aktor sprawdza zapisany stan maszyny w bazie danych. Jeśli ma status CREATED informuje lokalnego agenta o stworzeniu maszyny.  
+W zależności od tego czy maszyna ma aktywnie wykorzystywane zasoby ustawia jej odpowiedni status ACTIVE lub IDLE i zapisuje w bazie.
+##### Odłączanie maszyny
+Aktor zwalnia zasoby wykorzystywane przez maszynę.
+##### Alokacja zasobów
+Aktor alokuje zasoby dla danej maszyny wirtualnej.
+##### Zwolnienie zasobów
+Aktor zwalnia zasoby dla danej maszyny wirtualnej.
+##### Martwa maszyna
+Aktor zwalnia zasoby dla zmarłej maszyny wirtualnej.
 ## 3. Protokoły
 
 ### Agent globalny
