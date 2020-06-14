@@ -19,7 +19,7 @@ final case class VM(id: String,
   }
 
   def couldExecuteTask(specification: TaskSpecification): Boolean = {
-    specification.cpu <= this.cpu || specification.ram <= this.ram || specification.disk <= this.disk
+    specification.cpu <= this.cpu && specification.ram <= this.ram && specification.disk <= this.disk
   }
 
   def toSpecs = new VirtualMachineSpecification(this)
