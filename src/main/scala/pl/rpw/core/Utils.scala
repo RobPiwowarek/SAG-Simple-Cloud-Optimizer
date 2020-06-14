@@ -119,18 +119,21 @@ object Utils {
     Await.result(actorSystem.actorSelection("user/GUA").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
   }
 
-  def getActorRef(actorSystem: ActorSystem, path: String) = {
+  def getActorRef(actorSystem: ActorSystem,
+                  path: String) = {
     Await.result(actorSystem.actorSelection(s"user/$path").resolveOne(FiniteDuration(1, TimeUnit.SECONDS)), Duration.Inf)
   }
 
-  def markAllMachinesAsDeadAdNotifyOwners(hypervisor: Hypervisor, actorSystem: ActorSystem): Unit = {
+  def markAllMachinesAsDeadAdNotifyOwners(hypervisor: Hypervisor,
+                                          actorSystem: ActorSystem): Unit = {
     VMRepository.findByHypervisor(hypervisor.id)
       .foreach(vm => {
         markMachineAsDeadAndNotifyOwner(vm, actorSystem)
       })
   }
 
-  def markMachineAsDeadAndNotifyOwner(vm: VM, actorSystem: ActorSystem) = {
+  def markMachineAsDeadAndNotifyOwner(vm: VM,
+                                      actorSystem: ActorSystem) = {
     vm.state = VMState.DEAD.toString
     VMRepository.update(vm)
     val tasks = TaskSpecificationsRepository
@@ -141,17 +144,18 @@ object Utils {
       val userRef = Utils.getActorRef(actorSystem, vm.user)
       userRef ! VmIsDeadMessage(vm.id, tasks)
     } catch {
-      case exception: Throwable => println(s"Could not find actor for userId: ${vm.user}")
+      case exception: Throwable => println(s"Could not find actor for userId: ${vm.user}: ${exception.getMessage}")
     }
     try {
       val hypervisorRef = Utils.getActorRef(actorSystem, vm.hypervisor.orNull)
       hypervisorRef ! VmIsDeadMessage(vm.id, tasks)
     } catch {
-      case exception: Throwable => println(s"Could not find actor for hypervisor: ${vm.hypervisor.orNull}")
+      case exception: Throwable => println(s"Could not find actor for hypervisor: ${vm.hypervisor.orNull}: ${exception.getMessage}")
     }
   }
 
-  def markHypervisorAsDeadRecursively(hypervisor: Hypervisor, actorSystem: ActorSystem) = {
+  def markHypervisorAsDeadRecursively(hypervisor: Hypervisor,
+                                      actorSystem: ActorSystem) = {
     hypervisor.state = HypervisorState.DEAD.toString
     HypervisorRepository.update(hypervisor)
     markAllMachinesAsDeadAdNotifyOwners(hypervisor, actorSystem)

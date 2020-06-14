@@ -9,7 +9,7 @@ import org.apache.spark.ml.regression.GBTRegressionModel
 import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{TaskFinishedMessage, TaskRequestMessage, VirtualMachineRequestMassage}
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
-import pl.rpw.core.local.message.{CreateVMMessage, TaskCreationFailed, TaskGenerationRequestMessage, VMCreated, VmIsDeadMessage}
+import pl.rpw.core.local.message.{CreateVMMessage, TaskGenerationRequestMessage, VMCreated, VmIsDeadMessage}
 import pl.rpw.core.persistance.task.TaskSpecification
 
 import scala.collection.mutable
@@ -121,14 +121,6 @@ class LocalUtilityActor(val id: String,
 
     case TaskFinishedMessage(taskId, userId) =>
       println(s"""Task $taskId was finished""")
-      val specification = tasks.get(taskId)
-      specification.map(_ => {
-        decreaseUsage(_)
-        tasks.remove(taskId)
-      })
-
-    case TaskCreationFailed(taskId) =>
-      println(s"""Task $taskId creation failed""")
       val specification = tasks.get(taskId)
       specification.map(_ => {
         decreaseUsage(_)
