@@ -8,7 +8,7 @@ final case class VM(id: String,
                     ram: Int,
                     disk: Int,
                     user: String,
-                    var hypervisor: String,
+                    var hypervisor: Option[String],
                     var freeCpu: Int,
                     var freeRam: Int,
                     var freeDisk: Int) {

@@ -15,7 +15,7 @@ class VMs(tag: Tag) extends Table[VM](tag, "VMS") {
 
   def user = column[String]("USER")
 
-  def hypervisor = column[String]("HYPERVISOR")
+  def hypervisor = column[Option[String]]("HYPERVISOR")
 
   def freeCpu = column[Int]("FREE_CPU")
 

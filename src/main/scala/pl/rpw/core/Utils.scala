@@ -143,6 +143,12 @@ object Utils {
     } catch {
       case exception: Throwable => println(s"Could not find actor for userId: ${vm.user}")
     }
+    try {
+      val hypervisorRef = Utils.getActorRef(actorSystem, vm.hypervisor.orNull)
+      hypervisorRef ! VmIsDeadMessage(vm.id, tasks)
+    } catch {
+      case exception: Throwable => println(s"Could not find actor for hypervisor: ${vm.hypervisor.orNull}")
+    }
   }
 
   def markHypervisorAsDeadRecursively(hypervisor: Hypervisor, actorSystem: ActorSystem) = {
