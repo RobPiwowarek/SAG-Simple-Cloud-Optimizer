@@ -1,0 +1,158 @@
+Plan testów:
+1. Żądanie maszyny
+  - sukces:	start:hv hv1-10/10/10 (cpu/ram/disk)
+		start:hv hv2-11/12/13 (cpu/ram/disk)
+		start:gua -
+		request:vm 5/5/5/user (cpu/ram/disk/user)
+		print:all
+  (kontynuacja)
+  - sukces 	request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+  - porażka 	task:task1/user/50/8/8/8
+		print:all
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+		task:task2/user/50/8/8/8
+		print:all
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+  (kontynuacja)
+2. Żądanie wykonania zadania
+  - sukces	task:task2/user/5/1/1/1 (taskId/userId/time/cpu/ram/disk)
+		print:all
+		mija 5 sekund
+		print:all
+  (kontynuacja)
+  - porażka	task:task1/user/5/100/1/1 (taskId/userId/time/cpu/ram/disk)
+		print:all
+  (restart)
+3. Overprovisioning
+  - sukces:	start:hv hv3-13/13/13 (cpu/ram/disk)
+		start:hv hv4-14/14/14
+		start:gua -
+		request:vm 10/10/10/user (cpu/ram/disk/user)
+		request:vm 10/10/10/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/50/1/1/1 (taskId/userId/time/cpu/ram/disk)
+		print:all
+		task:task2/user/50/10/1/1 (taskId/userId/time/cpu/ram/disk)
+		*magia migracji*
+		print:all
+  (restart)
+  - porażka 	start:hv hv3-13/13/13 (cpu/ram/disk)
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/5/8/8/8 (taskId/userId/time/cpu/ram/disk)
+		task:task1/user/5/8/8/8 (taskId/userId/time/cpu/ram/disk)
+		*nie da się zrobić migracji*
+		print:all
+  (restart)
+3. Underprovisioning
+  - sukces:	start:hv hv1-10/10/10 (cpu/ram/disk)
+		start:hv hv2-11/11/11 (cpu/ram/disk)
+		start:gua -
+		request:vm 4/4/4/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/120/4/4/4 (taskId/userId/time/cpu/ram/disk)
+		request:vm 4/4/4/user (cpu/ram/disk/user)
+		print:all
+		task:task2/user/40/4/4/4 (taskId/userId/time/cpu/ram/disk)
+		request:vm 4/4/4/user (cpu/ram/disk/user)
+		print:all
+		task:task3/user/120/4/4/4 (taskId/userId/time/cpu/ram/disk)
+		print:all
+		*kończy się task2 -> underprovisioning hv-1*
+		*migracja maszyny z hv-1 fo hv-2*
+  - porażka (nastąpiłby overprovisioninng) 
+		start:hv hv1-10/10/10 (cpu/ram/disk)
+		start:hv hv2-11/11/11 (cpu/ram/disk)
+		start:gua -
+		request:vm 4/4/4/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/120/4/4/4 (taskId/userId/time/cpu/ram/disk)
+		request:vm 4/4/4/user (cpu/ram/disk/user)
+		print:all
+		task:task2/user/30/4/4/4 (taskId/userId/time/cpu/ram/disk)
+		request:vm 6/6/6/user (cpu/ram/disk/user)
+		print:all
+		task:task3/user/120/6/6/6 (taskId/userId/time/cpu/ram/disk)
+		print:all
+		*kończy się task2 -> underprovisioning hv-1*
+		*migracja maszyny z hv-1 fo hv-2*
+
+3. Migracja (każdy przypadek na nowym środowisku)
+  - sukces:	start:hv hv1-10/10/10 (cpu/ram/disk)
+		start:hv hv2-12/12/12 (cpu/ram/disk)
+		start:gua -
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		task:task2/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		*magia migracji*
+		print:all
+  - sukces, śmierć h1 (breakpoint VitrualMachineActor:38)
+		start:hv hv1-10/10/10 (cpu/ram/disk)
+		start:hv hv2-12/12/12 (cpu/ram/disk)
+		start:gua -
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		task:task2/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		*breakpoint*
+		stop:hv1
+		*magia migracji*
+		print:all
+  - sukces, śmierć h1, h2 (breakpoint VitrualMachineActor:38)
+		start:hv hv1-10/10/10 (cpu/ram/disk)
+		start:hv hv2-12/12/12 (cpu/ram/disk)
+		start:hv hv3-13/13/13 (cpu/ram/disk)
+		start:gua -
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		task:task2/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		*breakpoint*
+		stop:hv1
+		stop:hv2
+		*magia migracji*
+		print:all
+  - migracja niemożliwa, śmierć h1, h2 (breakpoint VitrualMachineActor:38)
+		start:hv hv1-10/10/10 (cpu/ram/disk)
+		start:hv hv2-11/11/11 (cpu/ram/disk)
+		start:gua -
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		request:vm 8/8/8/user (cpu/ram/disk/user)
+		print:all
+		task:task1/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		task:task2/user/50/1/1/8 (taskId/userId/time/cpu/ram/disk)
+		*breakpoint*
+		stop:hv1
+		stop:hv2
+		*magia migracji*
+		print:all	
+
+(restart)
+CAŁY SYSTEM
+start:hv hv1-10/10/10 (cpu/ram/disk)
+start:hv hv2-11/11/11 (cpu/ram/disk)
+start:gua -
+start:lua lua1-1/2/3/10/5 (sinAmpl, ramAmpl, diskAmpl, timeAmpl, generationPeriod)
+start:vm 7/7/7/lua1 
+start:vm 5/4/4/lua1 
+
+stop:{id}
+start:lua lua2-1/2/3/4/3 
+start:lua lua3-1/2/3/4/1
+start:vm 8/8/5/lua2
+stop:lua2
+
+start:vm 3/3/5/lua2
+
+stop:eNRVsP
+stop:gua
+
+
