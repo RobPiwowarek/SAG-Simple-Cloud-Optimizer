@@ -81,7 +81,7 @@ object HypervisorRepository {
   def findById(id: String): Hypervisor = {
     val query = tableQuery
       .filter(_.id === id)
-    Await.result(db.run(query.result), Duration.Inf).head
+    Await.result(db.run(query.result), Duration.Inf).headOption.orNull
   }
 
   def insert(hypervisor: Hypervisor): Unit = {

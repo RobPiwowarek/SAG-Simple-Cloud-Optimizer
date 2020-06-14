@@ -8,6 +8,12 @@ import scala.concurrent.Await
 import scala.concurrent.duration.Duration
 
 object VMRepository {
+  def findByUser(user: String): Seq[VM] = {
+    val query = tableQuery
+      .filter(_.user === user)
+    Await.result(db.run(query.result), Duration.Inf)
+  }
+
   def findByHypervisor(hypervisor: String): Seq[VM] = {
     val query = tableQuery
       .filter(_.hypervisor === hypervisor)
@@ -71,7 +77,7 @@ object VMRepository {
   def findById(id: String): VM = {
     val query = tableQuery
       .filter(_.id === id)
-    Await.result(db.run(query.result), Duration.Inf).head
+    Await.result(db.run(query.result), Duration.Inf).headOption.orNull
   }
 
   def insert(vm: VM): Unit = {

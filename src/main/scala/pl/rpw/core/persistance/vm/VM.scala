@@ -1,6 +1,7 @@
 package pl.rpw.core.persistance.vm
 
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
+import pl.rpw.core.persistance.task.TaskSpecification
 
 final case class VM(id: String,
                     var state: String,
@@ -15,6 +16,10 @@ final case class VM(id: String,
 
   def hasActivelyUsedResources: Boolean = {
     this.freeCpu != this.cpu || this.freeRam != this.ram || this.freeDisk != this.disk
+  }
+
+  def couldExecuteTask(specification: TaskSpecification): Boolean = {
+    specification.cpu <= this.cpu || specification.ram <= this.ram || specification.disk <= this.disk
   }
 
   def toSpecs = new VirtualMachineSpecification(this)

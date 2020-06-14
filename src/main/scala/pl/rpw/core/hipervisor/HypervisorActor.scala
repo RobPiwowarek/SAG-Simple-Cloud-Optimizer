@@ -1,6 +1,7 @@
 package pl.rpw.core.hipervisor
 
 import akka.actor.Actor
+import com.typesafe.scalalogging.LazyLogging
 import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{OverprovisioningMessage, UnderprovisioningMessage}
 import pl.rpw.core.hipervisor.message._
@@ -11,51 +12,52 @@ import pl.rpw.core.persistance.vm.{VMRepository, VMState}
 class HypervisorActor(val availableCpu: Int,
                       val availableRam: Int,
                       val availableDisk: Int,
-                      val id: String) extends Actor {
+                      val id: String) extends Actor with LazyLogging{
   val actorSystem = context.system
 
   override def receive: Receive = {
     case AttachVMMessage(vmId) =>
-      print("Hypervisor " + id + " ")
-      println("Received attach: " + vmId)
+      logger.info(s"Hypervisor $id received attach: $vmId")
       val vm = VMRepository.findById(vmId)
       if (vm.state.equals(VMState.CREATED.toString)) {
         try {
           Utils.getActorRef(actorSystem, vm.user) ! VMCreated(vm.id)
         } catch {
-          case exception: Throwable => println(s"Exception occured when awaiting for resolving of actor ${vm.user} in hypervisor $id: ${exception.getMessage}")
+          case exception: Throwable =>
+            logger.error(s"Exception occured when awaiting for resolving of actor ${vm.user} in hypervisor $id: ${exception.getMessage}")
         }
       }
       if (vm.hasActivelyUsedResources) {
         vm.state = VMState.ACTIVE.toString
+        allocateResources(vm.cpu, vm.ram, vm.disk)
       } else {
         vm.state = VMState.IDLE.toString
       }
       VMRepository.update(vm)
 
     case DetachVMMessage(vmId) =>
-      print("Hypervisor " + id + " ")
-      println("Received detach: " + vmId)
+      logger.info(s"Hypervisor $id received detach: $vmId")
       val VM = VMRepository.findById(vmId)
-      freeResources(VM.cpu, VM.ram, VM.disk)
+      if (VM.state.equals(VMState.ACTIVE.toString)) {
+        freeResources(VM.cpu, VM.ram, VM.disk)
+      }
 
     case AllocateResourcesMessage(vmId) =>
-      print("Hypervisor " + id + " ")
-      println("Received allocate: " + vmId)
+      logger.info(s"Hypervisor $id received allocate resources: $vmId")
       val VM = VMRepository.findById(vmId)
       allocateResources(VM.cpu, VM.ram, VM.disk)
 
     case FreeResourcesMessage(vmId) =>
-      print("Hypervisor " + id + " ")
-      println("Received free: " + vmId)
+      logger.info(s"Hypervisor $id received free resources: $vmId")
       val VM = VMRepository.findById(vmId)
       freeResources(VM.cpu, VM.ram, VM.disk)
 
     case VmIsDeadMessage(vm, tasks) =>
-      print("Hypervisor " + id + " ")
-      println("Received vm is dead: " + vm)
+      logger.info(s"Hypervisor $id received vm is dead: $vm")
       val VM = VMRepository.findById(vm)
-      freeResources(VM.cpu, VM.ram, VM.disk)
+      if (VM.state.equals(VMState.ACTIVE.toString)) {
+        freeResources(VM.cpu, VM.ram, VM.disk)
+      }
 
   }
 
@@ -64,7 +66,8 @@ class HypervisorActor(val availableCpu: Int,
       try {
         Utils.globalUtility(actorSystem) ! OverprovisioningMessage(this.id)
       } catch {
-        case exception: Throwable => println(s"Exception occured when awaiting for resolving GUA in Hypervisor $id when overprovisioning occurred: ${exception.getMessage}")
+        case exception: Throwable =>
+          logger.error(s"Exception occured when awaiting for resolving GUA in Hypervisor $id when overprovisioning occurred: ${exception.getMessage}")
       }
     }
   }
@@ -74,7 +77,8 @@ class HypervisorActor(val availableCpu: Int,
       try {
         Utils.globalUtility(actorSystem) ! UnderprovisioningMessage(this.id)
       } catch {
-        case exception: Throwable => println(s"Exception occured when awaiting for resolving GUA in Hypervisor $id when underprovisioning occurred: ${exception.getMessage}")
+        case exception: Throwable =>
+          logger.error(s"Exception occured when awaiting for resolving GUA in Hypervisor $id when underprovisioning occurred: ${exception.getMessage}")
       }
     }
   }
