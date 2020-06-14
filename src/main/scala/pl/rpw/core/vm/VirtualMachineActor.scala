@@ -108,18 +108,15 @@ class VirtualMachineActor(val id: String,
   }
 
   def allocateResources(cpu: Int, ram: Int, disk: Int): Unit = {
-    mutex.acquire()
     val vm = VMRepository.findById(id)
     vm.freeCpu -= cpu
     vm.freeRam -= ram
     vm.freeDisk -= disk
     vm.state = VMState.ACTIVE.toString
     VMRepository.update(vm)
-    mutex.release()
   }
 
   def freeResources(cpu: Int, ram: Int, disk: Int): VM = {
-    mutex.acquire()
     val vm = VMRepository.findById(id)
     vm.freeCpu += cpu
     vm.freeRam += ram
@@ -128,11 +125,11 @@ class VirtualMachineActor(val id: String,
       vm.state = VMState.IDLE.toString
     }
     VMRepository.update(vm)
-    mutex.release()
     vm
   }
 
   def execute(specification: TaskSpecification): Unit = {
+    mutex.acquire()
     val vm = VMRepository.findById(id)
     if (!vm.hasActivelyUsedResources) {
       requestMachinesResources(vm)
@@ -151,14 +148,17 @@ class VirtualMachineActor(val id: String,
       new FiniteDuration(specification.time, TimeUnit.SECONDS)) {
       finishTask.run()
     }
+    mutex.release()
   }
 
   private def finishTaskExecution(specification: TaskSpecification) = {
+    mutex.acquire()
     val vm = freeResources(specification.cpu, specification.ram, specification.disk)
     if (!vm.hasActivelyUsedResources) {
       freeMachinesResources(vm)
     }
     sendTaskFinishedMessage(specification)
+    mutex.release()
   }
 
   private def sendTaskFinishedMessage(specification: TaskSpecification): Unit = {
