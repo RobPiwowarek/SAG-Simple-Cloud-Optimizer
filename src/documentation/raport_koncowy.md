@@ -280,11 +280,11 @@ Hypervisor obsługuje wiadomości dotyczące posiadanych przez niego zasobów w�
 
 ### Wykryto, że maszyna wirtualna nie odpowiada
 W sytuacjach gdy maszyna wirtualna nie odpowiada oznaczana jest jako martwa i usuwamy zadania, które na niej były. Następnie wysyłamy stosowny komunikat
-do lokalnego agenta żeby mógł zmniejszyć zasoby i odznaczyć sobie, że maszyna nie działa. Wysyłamy wiadomość do hypervisor-a żeby zwolnił sobie zasoby.
+do lokalnego agenta żeby mógł zmniejszyć zużycie zasobów i odnotować, że maszyna nie działa. Wysyłamy wiadomość do hypervisor-a żeby zwolnił zasoby.
 ### Wykryto, że hypervisor nie odpowiada
-W przypadku nie działania hypervisor-a ustawiamy jego maszyny wirtualne jako martwe i wykonujemy operacje opisane powyżej.
+W przypadku niedziałania hypervisor-a ustawiamy jego maszyny wirtualne jako martwe i wykonujemy operacje opisane powyżej.
 ### Wykryto, że globalny aktor nie odpowiada
-Gdy globalny agent nie odpowiada, żądania do niego są powtarzane do skutku w oczekiwaniu na uruchomienie go ponownie.
+Gdy globalny aktor nie odpowiada, żądania do niego są powtarzane do skutku w oczekiwaniu na uruchomienie go ponownie.
 ### Wykryto, że lokalny aktor nie odpowiada
 W przypadku gdy lokalny aktor nie odpowiada nie jest podejmowane żadne dodatkowe działanie.
 
