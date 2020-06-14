@@ -10,7 +10,7 @@ import pl.rpw.core.global.message.{TaskRequestMessage, VirtualMachineRequestMass
 import pl.rpw.core.hipervisor.HypervisorActor
 import pl.rpw.core.hipervisor.message.VirtualMachineSpecification
 import pl.rpw.core.local.message.CreateVMMessage
-import pl.rpw.core.local.{LocalUtilityActor, TaskSpecificationGenerator}
+import pl.rpw.core.local.{LocalUtilityActor, TaskSpecificationGenerationScheduler}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository}
 import pl.rpw.core.persistance.task.{TaskSpecification, TaskSpecificationsRepository}
 import pl.rpw.core.persistance.vm.VMRepository
@@ -49,7 +49,7 @@ class InputThread(actorSystem: ActorSystem,
       )
     ), id)
     new Thread(
-      new TaskSpecificationGenerator(
+      new TaskSpecificationGenerationScheduler(
         FiniteDuration(Integer.parseInt(specification(4)), TimeUnit.SECONDS), actorSystem, id)
     ).start()
     actors.put(id, ref)
