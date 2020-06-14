@@ -154,8 +154,8 @@ W naszym systemie myślimy o agencie lokalnym jako o użytkowniku. Użytkownik z
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
 2. Przekształcenie historii do postaci odpowiedniej dla modelu.
 3. Trenowanie modelu.
-4. Generowanie kolejnych wartości funkcji *sin* w zależności od aktualnego czasu (timestamp) (sterowalne amplitudy sinusoidy)
-5. Zapisanie historii. 
+4. Aktualizacja modeli wraz ze zmianami historii zużycia zasobów
+
 
 #### Dokładny opis działania agenta lokalnego
 **1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku**
@@ -169,7 +169,7 @@ Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej lin
 
 **2. Przekształcenie historii do postaci odpowiedniej dla modelu**
 
-Do predykcji wartości w chwili model wykorzystuje wartości historyczne, które są jego atrybutami. W przypadku naszego systemu jest to 10 wartości historycznych. Taka wartość pozwala zachować odpowiedni balans pomiędzy czasem uczenia modelu, a jego precyzją. Data Frame jaki powstaje z listy o długości m ma kształt *m x n+1* (n kolumn to atrybuty, a 1 to etykieta, czyli wartość jaką model powinien na ich podstawie przewidzieć). Poniższe zdjęcie przedstawia fragment zbioru uczącego:
+Do predykcji wartości model wykorzystuje wartości historyczne, które są jego atrybutami. W przypadku naszego systemu jest to 10 wartości historycznych. Taka wartość pozwala zachować odpowiedni balans pomiędzy czasem uczenia modelu, a jego precyzją. Data Frame jaki powstaje z listy o długości m ma kształt *m x n+1* (n kolumn to atrybuty, a 1 to etykieta, czyli wartość jaką model powinien na ich podstawie przewidzieć). Poniższe zdjęcie przedstawia fragment zbioru uczącego:
 <p align="center">
   <img src = "./raport_koncowy_zdjecia/training_dataset_snapshot.png"/>
    <figcaption>Fragment zbioru uczącego</figcaption>
@@ -192,13 +192,9 @@ Na poniższych zdjęciach możemy zobaczyć jak wyżej opisane modele przewiduj�
    <figcaption>Predicted vs Real Values for Linear Regression, RMSE = 24.95</figcaption>
 </p>
 
-**4. Generowanie kolejnych wartości funckji sin w zależności od czasu i predykcja wartości w chwili t+1.**
-
-Aby zasymulować działania użytkownika w systemie agent lokalny generuje wartości funkcji *sin* w zależności od czasu, w pętli wykonującej się x razy. Co każdą iteracją model przewiduje wartość funkcji w chwili *t+1* i wysyła ją do **agenta globalnego** w celu uzyskania lub oddania części przydzielanych mu zasobów. Aby model predykcyjny był aktualny, jest on trenowany od nowa co ustaloną ilość iteracji k. Podczas kolejnych treningów pod uwagę brane są tylko wartości z zakresu *(t - k : t )*. Ma to na celu dostosowanie modelu do aktualnego zużycia zasobów w systemie i uodpornienie modelu na funkcje nieokresowe. Tak zaprojektowany system jest w stanie przewidywać wartości dowolnej funckji, której charakter jest zależny od jej poprzednich wartości.  
-
-**5. Zapisanie historii.**
-
-Po zakończeniu generowania wartości, są one zapisane do pliku, aby można było z nich skorzystać podczas trenowania modelu przy kolejnym uruchomieniu agenta.
+**4. Aktualizacja modeli wraz ze zmianami historii zużycia zasobów**
+Lokalny agent zbiera dane o aktualnym zużyciu zasobów i zapisuje je. W momencie gdy użytkownik zażąda nowej maszyny wirtualnej. Modele aktualizowane są na podstawie najnowszych rekordów zużycia zasobów.
+Następnie zapytanie użytkownika jest reformułowane na podstawie predykcji zaktualizowanych modeli - dzięki temu nowa maszyna wirtualna będzie lepiej odpowiadać potrzebom użytkownika (faktycznem zużyciu zasobów).
 
 ### Aktor globalny
 Główna idea i zasada działania aktora globalnego jest opisana w odpowiedniej sekcji Koncepcji.
