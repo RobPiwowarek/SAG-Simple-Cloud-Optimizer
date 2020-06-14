@@ -4,7 +4,7 @@ import akka.actor.Actor
 import pl.rpw.core.Utils
 import pl.rpw.core.global.message.{OverprovisioningMessage, UnderprovisioningMessage}
 import pl.rpw.core.hipervisor.message._
-import pl.rpw.core.local.message.VMCreated
+import pl.rpw.core.local.message.{VMCreated, VmIsDeadMessage}
 import pl.rpw.core.persistance.hypervisor.{Hypervisor, HypervisorRepository, HypervisorState}
 import pl.rpw.core.persistance.vm.{VMRepository, VMState}
 
@@ -50,17 +50,32 @@ class HypervisorActor(val availableCpu: Int,
       println("Received free: " + vmId)
       val VM = VMRepository.findById(vmId)
       freeResources(VM.cpu, VM.ram, VM.disk)
+
+    case VmIsDeadMessage(vm, tasks) =>
+      print("Hypervisor " + id + " ")
+      println("Received vm is dead: " + vm)
+      val VM = VMRepository.findById(vm)
+      freeResources(VM.cpu, VM.ram, VM.disk)
+
   }
 
   def checkOverprovisioningAndNotifyGlobalAgent(hypervisor: Hypervisor): Unit = {
     if (hypervisor.isOverprovisioning) {
-      Utils.globalUtility(actorSystem) ! OverprovisioningMessage(this.id)
+      try {
+        Utils.globalUtility(actorSystem) ! OverprovisioningMessage(this.id)
+      } catch {
+        case exception: Throwable => println(s"Exception occured when awaiting for resolving GUA in Hypervisor $id when overprovisioning occurred: ${exception.getMessage}")
+      }
     }
   }
 
   def checkUnderprovisioningAndNotifyGlobalAgent(hypervisor: Hypervisor): Unit = {
     if (hypervisor.isUnderprovisioning) {
-      Utils.globalUtility(actorSystem) ! UnderprovisioningMessage(this.id)
+      try {
+        Utils.globalUtility(actorSystem) ! UnderprovisioningMessage(this.id)
+      } catch {
+        case exception: Throwable => println(s"Exception occured when awaiting for resolving GUA in Hypervisor $id when underprovisioning occurred: ${exception.getMessage}")
+      }
     }
   }
 

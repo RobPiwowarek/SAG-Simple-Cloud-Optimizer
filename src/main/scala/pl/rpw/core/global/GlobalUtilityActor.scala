@@ -102,6 +102,24 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
             }
         }
       }
+
+    case MigrationFailedMessage(vm) =>
+      logger.info("Migration failed from: " + vm)
+      val vmEntity = VMRepository.findById(vm)
+      val newHypervisor = HypervisorSelector.selectHypervisor(new VirtualMachineSpecification(vmEntity.cpu, vmEntity.ram, vmEntity.disk))
+      if (newHypervisor == null) {
+        logger.error(s"Migration impossible for vm $vm")
+        Utils.markMachineAsDeadAndNotifyOwner(vmEntity, actorSystem)
+      } else {
+        try {
+          val vmRef = Utils.getActorRef(actorSystem, vm)
+          vmRef ! MigrationMessage(newHypervisor.id)
+        } catch {
+          case exception: Throwable =>
+            logger.error(s"Exception occured when awaiting for resolving of vm ${vm} in GUA: ${exception.getMessage}")
+            Utils.markMachineAsDeadAndNotifyOwner(vmEntity, actorSystem)
+        }
+      }
   }
 
   private def createVM(userId: String,
@@ -126,7 +144,7 @@ class GlobalUtilityActor(actors: mutable.Map[String, ActorRef] = mutable.Map.emp
       specification.ram,
       specification.disk,
       userId,
-      hypervisor.id,
+      Some(hypervisor.id),
       specification.cpu,
       specification.ram,
       specification.disk
