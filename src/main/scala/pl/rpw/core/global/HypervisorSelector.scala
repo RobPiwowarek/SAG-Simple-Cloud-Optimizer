@@ -49,7 +49,7 @@ object HypervisorSelector extends LazyLogging {
     val allHypervisors = HypervisorRepository.findAll()
     val resource = selectMostRelevantResource(specification, allHypervisors)
     val orderFunction = Utils.getHypervisorOrderingFunction(resource)
-    selectedHypervisors.sortWith(orderFunction).head
+    selectedHypervisors.sortWith(orderFunction).filterNot(_.wouldBeOverprovisionedWith(specification)).headOption.getOrElse(Consts.EmptyHypervisor)
   }
 
   def selectHypervisor(specification: VirtualMachineSpecification): Hypervisor = {

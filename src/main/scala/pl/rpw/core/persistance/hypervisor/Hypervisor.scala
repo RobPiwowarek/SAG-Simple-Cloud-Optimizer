@@ -12,10 +12,24 @@ final case class Hypervisor(id: String,
                             var freeRam: Int,
                             var freeDisk: Int) {
 
+  def wouldBeOverprovisionedWith(specification: VirtualMachineSpecification): Boolean = {
+    val newFreeCpu = this.cpu - specification.cpu
+    val newFreeRam = this.ram - specification.ram
+    val newFreeDisk = this.disk - specification.disk
+
+    val cpuUsage: Double = (cpu - newFreeCpu).toDouble / cpu
+    val memoryUsage: Double = (ram - newFreeRam).toDouble / ram
+    val diskUsage: Double = (disk - newFreeDisk).toDouble / disk
+
+    cpuUsage >= Consts.overprovisioningThreshold ||
+      memoryUsage >= Consts.overprovisioningThreshold ||
+      diskUsage >= Consts.overprovisioningThreshold
+  }
+
   def selectMostExploitedResource(): ResourceType.Value = {
-    val cpuExploitation = (this.cpu - this.freeCpu) / this.cpu
-    val ramExploitation = (this.ram - this.freeRam) / this.ram
-    val diskExploitation = (this.disk - this.freeDisk) / this.disk
+    val cpuExploitation = (this.cpu - this.freeCpu).toDouble / this.cpu
+    val ramExploitation = (this.ram - this.freeRam).toDouble / this.ram
+    val diskExploitation = (this.disk - this.freeDisk).toDouble / this.disk
 
     if (cpuExploitation >= ramExploitation && cpuExploitation >= diskExploitation) {
       ResourceType.CPU
