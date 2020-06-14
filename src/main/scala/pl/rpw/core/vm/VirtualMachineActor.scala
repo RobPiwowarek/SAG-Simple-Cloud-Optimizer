@@ -1,6 +1,6 @@
 package pl.rpw.core.vm
 
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Semaphore, TimeUnit}
 
 import akka.actor.{Actor, ActorSystem}
 import com.typesafe.scalalogging.LazyLogging
@@ -21,6 +21,7 @@ class VirtualMachineActor(val id: String,
                           val diskSpace: Int)
   extends Actor with LazyLogging {
 
+  private val mutex: Semaphore = new Semaphore(1)
   private val actorSystem = context.system
 //  private val tasks = new mutable.HashSet[TaskSpecification]
   private val retryTime: Long = 10
@@ -107,15 +108,18 @@ class VirtualMachineActor(val id: String,
   }
 
   def allocateResources(cpu: Int, ram: Int, disk: Int): Unit = {
+    mutex.acquire()
     val vm = VMRepository.findById(id)
     vm.freeCpu -= cpu
     vm.freeRam -= ram
     vm.freeDisk -= disk
     vm.state = VMState.ACTIVE.toString
     VMRepository.update(vm)
+    mutex.release()
   }
 
   def freeResources(cpu: Int, ram: Int, disk: Int): VM = {
+    mutex.acquire()
     val vm = VMRepository.findById(id)
     vm.freeCpu += cpu
     vm.freeRam += ram
@@ -124,6 +128,7 @@ class VirtualMachineActor(val id: String,
       vm.state = VMState.IDLE.toString
     }
     VMRepository.update(vm)
+    mutex.release()
     vm
   }
 
