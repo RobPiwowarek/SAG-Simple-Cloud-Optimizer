@@ -170,7 +170,7 @@ tworzona jest nowa specyfikacja.
 4. Aktualizacja modeli wraz ze zmianami historii zużycia zasobów
 
 
-#### Dokładny opis działania agenta lokalnego
+#### Dokładny opis uczenia się i predykcji agenta lokalnego
 **1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku**
 
 Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej linii przechowywana jest informacja na temat ilości zużytych danych w postaci liczby zmiennoprzecinkowej oraz chwili, w której wystąpiło dane zdarzenie. Fragment pliku jest widoczny na zdjęciu poniżej.
