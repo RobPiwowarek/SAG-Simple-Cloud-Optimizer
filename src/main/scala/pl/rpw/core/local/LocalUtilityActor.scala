@@ -61,9 +61,9 @@ class LocalUtilityActor(val id: String,
       val predictedDisk = LocalUtilityHelper.predict(modelDisk, usageHistoryDisk).toInt / vms.size
 
       val adjusted = new VirtualMachineSpecification(
-        if (predictedCpu == 0) specification.cpu else math.abs(predictedCpu - specification.cpu) / 2,
-        if (predictedRam == 0) specification.ram else math.abs(predictedRam - specification.ram) / 2,
-        if (predictedDisk == 0) specification.disk else math.abs(predictedDisk - specification.disk) / 2
+        if (predictedCpu == 0) specification.cpu else math.abs(0.2 * predictedCpu + 0.8 * specification.cpu).toInt,
+        if (predictedRam == 0) specification.ram else math.abs(0.2 * predictedRam + 0.8 * specification.ram).toInt,
+        if (predictedDisk == 0) specification.disk else math.abs(0.2 * predictedDisk + 0.8 * specification.disk).toInt
       )
       logger.info(s"Adjusted spec on $id: $adjusted. Requested $specification")
       adjusted
@@ -124,17 +124,15 @@ class LocalUtilityActor(val id: String,
 
     case TaskFinishedMessage(taskId, userId) =>
       logger.info(s"""Task $taskId was finished""")
-      val specification = tasks.get(taskId)
-      specification.map(_ => {
-        decreaseUsage(_)
+      tasks.get(taskId).map(t => {
+        decreaseUsage(t)
         tasks.remove(taskId)
       })
 
     case TaskCreationFailed(taskId) =>
       logger.info(s"""Task $taskId could not be executed or enqueued""")
-      val specification = tasks.get(taskId)
-      specification.map(_ => {
-        decreaseUsage(_)
+      tasks.get(taskId).map(t => {
+        decreaseUsage(t)
         tasks.remove(taskId)
       })
 
@@ -146,10 +144,9 @@ class LocalUtilityActor(val id: String,
       logger.info(s"""VM $id was found dead""")
       vms.remove(vm)
       tasks.foreach(task => {
-        val specification = this.tasks.get(task)
-        specification.map(_ => {
+        this.tasks.get(task).map(t => {
           println(s"Removing dead task $task")
-          decreaseUsage(_)
+          decreaseUsage(t)
           this.tasks.remove(task)
         })
       })
