@@ -102,7 +102,7 @@ Dostarczamy agenta symulującego zachowanie hipernadzorcy oraz maszyny wirtualne
 przedstawiona jest na rysuku poniżej:
 
 <p align="center">
-  <img src = "./komunikacja.png"/> 
+  <img src = "komunikacja.png"/> 
    <figcaption>Komunikacja pomiędzy agentami</figcaption>
 </p>
 
@@ -121,7 +121,7 @@ Wymieniane są następujące komunikaty:
 
 ### Architektura
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/architektura.png"/>
+  <img src = "raport_koncowy_zdjecia/architektura.png"/>
    <figcaption>Architektura systemu</figcaption>
 </p>
 
@@ -129,19 +129,19 @@ Wymieniane są następujące komunikaty:
 
 #### Migracja - sukces
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/migration.png"/>
+  <img src = "raport_koncowy_zdjecia/migration.png"/>
    <figcaption>Proces pomyślnej migracji</figcaption>
 </p>
 
 #### Migracja - szerszy kontekst
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/migrate.png"/>
+  <img src = "raport_koncowy_zdjecia/migrate.png"/>
    <figcaption>Proces migracji</figcaption>
 </p>
 
 #### Tworzenie zadania
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/task-request.png"/>
+  <img src = "raport_koncowy_zdjecia/task-request.png"/>
    <figcaption>Proces tworzenia zadania</figcaption>
 </p>
 
@@ -176,7 +176,7 @@ tworzona jest nowa specyfikacja.
 Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej linii przechowywana jest informacja na temat ilości zużytych danych w postaci liczby zmiennoprzecinkowej oraz chwili, w której wystąpiło dane zdarzenie. Fragment pliku jest widoczny na zdjęciu poniżej.
 
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/history_snapshot.png"/>
+  <img src = "raport_koncowy_zdjecia/history_snapshot.png"/>
    <figcaption>Fragment pliku z historią zużycia zasobów</figcaption>
 </p>
 
@@ -184,7 +184,7 @@ Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej lin
 
 Do predykcji wartości model wykorzystuje wartości historyczne, które są jego atrybutami. W przypadku naszego systemu jest to 10 wartości historycznych. Taka wartość pozwala zachować odpowiedni balans pomiędzy czasem uczenia modelu, a jego precyzją. Data Frame jaki powstaje z listy o długości m ma kształt *m x n+1* (n kolumn to atrybuty, a 1 to etykieta, czyli wartość jaką model powinien na ich podstawie przewidzieć). Poniższe zdjęcie przedstawia fragment zbioru uczącego:
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/training_dataset_snapshot.png"/>
+  <img src = "raport_koncowy_zdjecia/training_dataset_snapshot.png"/>
    <figcaption>Fragment zbioru uczącego</figcaption>
 </p>
 
@@ -197,11 +197,11 @@ osiągał błąd na poziomie 24.95%. Tak więc w powyższym przypadku zastosowan
 
 Na poniższych zdjęciach możemy zobaczyć jak wyżej opisane modele przewidują wartość funkcji sin:
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/real_predicted_rgb.png"/>
+  <img src = "raport_koncowy_zdjecia/real_predicted_rgb.png"/>
 </p>
 
 <p align="center">
-  <img src = "./raport_koncowy_zdjecia/real_predicted_lnr.png"/>
+  <img src = "raport_koncowy_zdjecia/real_predicted_lnr.png"/>
    <figcaption>Predicted vs Real Values for Linear Regression, RMSE = 24.95</figcaption>
 </p>
 

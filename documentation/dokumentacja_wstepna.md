@@ -99,7 +99,7 @@ Dostarczamy agenta symulującego zachowanie hipernadzorcy oraz maszyny wirtualne
 przedstawiona jest na rysuku poniżej:
 
 <p align="center">
-  <img src = "./komunikacja.png"/> 
+  <img src = "komunikacja.png"/> 
    <figcaption>Komunikacja pomiędzy agentami</figcaption>
 </p>
 
