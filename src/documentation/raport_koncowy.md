@@ -1,6 +1,6 @@
 ## Sprawozdanie z Projektu SAG WEITI PW 2020
 Autorzy: Paulina Szwed, Robert Piwowarek, Dawid Sitnik  
-## 1. Koncepcja
+## 1. Wysokopoziomowy opis architektury
 ### Cel zadania, architektura
 Celem zadania jest zbudowanie agentowego systemu do optymalizacji zużycia zasobów w chmurze. Optymalizacja powinna zapewnić minimalne zużycie
 energii przez fizyczne maszyny przy jednoczesnym spełnieniu wymagań czasowych dotyczących realizacji zadań użytkowników (SLA). Proponujemy
@@ -146,9 +146,22 @@ Wymieniane są następujące komunikaty:
 </p>
 
 ### Agent lokalny
-Jednym z celów agenta lokalnego jest obserwowanie zużycia zasobów przez klienta, przewidywanie ich zużycia w chwili *t+1* i informowanie o tym **agenta globalnego**. Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje nowe zadania (ze zużyciami zasobów bazującymi na przewidywaniach modelu). Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
+Jednym z celów agenta lokalnego jest obserwowanie zużycia zasobów przez klienta, przewidywanie ich zużycia w chwili *t+1* i informowanie o tym **agenta globalnego**. 
+Aby zasymulować sytuację na której możliwe będzie przetestowanie systemu, agent lokalny generuje nowe zadania (ze zużyciami zasobów bazującymi na przewidywaniach modelu). 
+Działanie agenta jest niezależne od funkcji symulującej zużycie zasobów systemowych, więc jest on w stanie przewidzieć wartość dowolnej funkcji.
 W naszym systemie myślimy o agencie lokalnym jako o użytkowniku. Użytkownik zlecałby przez tego agenta nowe zadania do wykonania w systemie.
 
+#### Reformulacja żądania nowej maszyny wirtualnej
+W celu optymalizacji zużycia zasobów, gdy użytkownik zażąda nowej maszyny wirtualnej jego żądanie jest przekształcane przez agenta lokalnego.
+Agent sięga do modelu wyuczonego na podstawie dotychczasowego zużycia, aby przewidzieć jaka maszyna wirtualna najlepiej
+spełniałaby potrzeby użytkownika i nieco zmniejszyć lub zwiększyć wartości w specyfikacji żądanej maszyny, np. gdy
+zużycie zasów jest bardzo małe, a użytkownik zażąda maszyny o bardzo dużych zasobach, faktycznie przydzielona mu maszyna
+będzie nieco mniejsza.
+
+Nowa specyfikacja maszyny wyliczana jest następująco - w przypadku gdy historia nie jest wystarczająca do przewidzenia
+zużycia, specyfikacja maszyny pozostaje bez zmian; jeżeli natomiast można oszacować przyszłe zużycie zasoób, wyliczana jest
+uśredniona specyfikacja maszyny dla aktualnego zużycia i przy użyciu średniej ważonej wartości z żądania i z przewidywania,
+tworzona jest nowa specyfikacja.
 
 #### Kroki podejmowane przez agenta lokalnego w celu przewidzenia zużycia zasobów:
 1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku.
@@ -157,7 +170,7 @@ W naszym systemie myślimy o agencie lokalnym jako o użytkowniku. Użytkownik z
 4. Aktualizacja modeli wraz ze zmianami historii zużycia zasobów
 
 
-#### Dokładny opis działania agenta lokalnego
+#### Dokładny opis uczenia się i predykcji agenta lokalnego
 **1. Wczytanie historii zużycia zasobów z poprzednio wykonywanej pracy z pliku**
 
 Historia zużycia zasobów jest przechowywana w pliku txt, w którego jednej linii przechowywana jest informacja na temat ilości zużytych danych w postaci liczby zmiennoprzecinkowej oraz chwili, w której wystąpiło dane zdarzenie. Fragment pliku jest widoczny na zdjęciu poniżej.
